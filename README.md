@@ -1,4 +1,3 @@
-Code credit to OnlineTutorials!
---------------
-This website is Leo's homepage.
-Here you can learn about me and get links to my stuff
+Leo's Website
+-
+This is Leo's Homepage. This is where you can find more about me.
