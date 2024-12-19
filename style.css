@@ -31,7 +31,7 @@ section
     justify-content: space-between;
     align-items: center;
     padding: 50px;
-    backdrop-filter: blur(3);
+    backdrop-filter: blur(5);
 }
 header
 {
