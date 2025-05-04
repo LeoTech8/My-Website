@@ -2,31 +2,27 @@
 <html lang="en">
 <head>
     <title>
-        Off Brand
+        Off Brandinator 3000
     </title>
 </head>
 <body>
     <h2>
-        Off Brandinator 2000
+        Off Brandinator 3000
     </h2>
     <p>
-        Press the button and get funny off brand items.
+        Press the button to get off brand items.
     </p>
-    <button onclick="randomElement()">Get Off Brand!</button>
+    <button onclick="randomElement()">Select</button>
     <br><br>
-    <div id="array"></div>
     <div id="result"></div>
     <script>
-        const arr = ["Nutela? Nah we got Nut Master.","Pringles? Nah we got Prongles.,""Lays? Nah, we got Legs.",1,2,3,4,5];
+        const arr = ["Nutella? Nah. We got Nut Master.","Pringles? Nah. We got Prongles.","Lays? Nah. We got Legs.","Sprite? Nah. We got Sprint."];
         document.getElementById("array").innerHTML = "Array: " + arr;
         function randomElement() {
             const rndmEle = arr[Math.floor(Math.random() * arr.length)];
             document.getElementById("result")
-                .innerHTML = "Random element from array: " + rndmEle;
+                .innerHTML = "" + rndmEle;
         }
     </script>
-</body>
-</html>
-
 </body>
 </html>
