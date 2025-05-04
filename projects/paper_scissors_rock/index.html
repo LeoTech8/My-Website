@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<head>
+    <title>Paper, Scissors, Rock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body{
+            font-family: Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body>
+<h1>Paper Scissors Rock</h1>
+<p><b>This game is still in development.</b> Things will change, get added and become better</p>
+<label for="psr">Paper, Scissors Of Rock?:</label>
+
+
+<select name="psr" id="psr">
+  <option value="p">Paper</option>
+  <option value="s">Scissors</option>
+  <option value="r">Rock</option>
+</select> 
+</br>
+</br>
+<button onclick="randomElement()">Lock In</button>
+    <br><br>
+    <div id="result"></div>
+    <script>
+        const arr = ["Paper","Scissors","Rock"];
+        document.getElementById("array").innerHTML = "Array: " + arr;
+        function randomElement() {
+            const rndmEle = arr[Math.floor(Math.random() * arr.length)];
+            document.getElementById("result")
+                .innerHTML = "Computer Chose: " + rndmEle;
+        }
+        </script>
+</body>
