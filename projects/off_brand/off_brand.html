@@ -2,24 +2,22 @@
 <html lang="en">
 <head>
     <title>
-        Selecting a Random Element from Array in JavaScript
+        Off Brand
     </title>
 </head>
 <body>
     <h2>
-        Selecting a Random Element from Array in JavaScript
+        Off Brandinator 2000
     </h2>
     <p>
-        In this example, we have used <strong>Math.random()</strong>
-        and <strong>Math.floor()</strong> method to select a random 
-        element from array in JavaScript.
+        Press the button and get funny off brand items.
     </p>
-    <button onclick="randomElement()">Select</button>
+    <button onclick="randomElement()">Get Off Brand!</button>
     <br><br>
     <div id="array"></div>
     <div id="result"></div>
     <script>
-        const arr = [1, 2, 3, 4, 5];
+        const arr = ["Nutela? Nah we got Nut Master.","Pringles? Nah we got Prongles.,""Lays? Nah, we got Legs."];
         document.getElementById("array").innerHTML = "Array: " + arr;
         function randomElement() {
             const rndmEle = arr[Math.floor(Math.random() * arr.length)];
