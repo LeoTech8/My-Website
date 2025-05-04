@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>
+        Off Brandinator 3000
+    </title>
+</head>
+<body>
+    <h2>
+        Off Brandinator 3000
+    </h2>
+    <p>
+        Press the button to get off brand items.
+    </p>
+    <button onclick="randomElement()">Get off brand</button>
+    <br><br>
+    <div id="result"></div>
+    <script>
+        const arr = [
+            "Nutella? Nah. We got Nut Master.","Pringles? Nah. We got Prongles.","Lays? Nah. We got Legs.","Sprite? Nah. We got Sprint.","Spider Man? Nah. We got Insect Destroyer Man.",
+            "Weet-Bix? Nah. We got Wheat-Chuncks.","Nintendo Wii? Nah. We Got WiWi.","Solo? Nah. We got Duo.","Mars Bar? Nah. We got Saturn Bar.","Nike? Nah. We got Hike.",
+            "Snickers? Nah. We got Snipers.","Dr. Pepper? Nah. We got Dr. Salt.","Tick Tack? Nah. We got Tcc Tcc","Mountain Dew? Nah. We got Mountain Shoutin","Mountain Dew? Nah. We got Mountain Veiw",
+            "Dr. Pepper? Nah. We got Dr. Bob.","Game Boy? Nah. We got Game Man.","Doritos? Nah. We got Detos.","Oreos? Nah. We got Cream Betweens.","Kit-Kat? Nah. We got Take-It (4 Fingers)","M&M? Nah. We got H&H",
+            
+    ]
+        document.getElementById("array").innerHTML = "Array: " + arr;
+        function randomElement() {
+            const rndmEle = arr[Math.floor(Math.random() * arr.length)];
+            document.getElementById("result")
+                .innerHTML = "" + rndmEle;
+        }
+    </script>
+</body>
+</html>
