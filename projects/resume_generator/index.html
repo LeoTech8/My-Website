@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Resume Generator</title>
+    <style>
+          body {
+          font-family: Verdana, sans-serif;
+          color: white;
+          background-color: rgb(87, 108, 131);
+          text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome To The Resume Generator</h1>
+    <label for="name">Name:</label>
+    <input id="name">
+    <br>
+    <br>
+    <label for="job">What Job Do You Want:</label>
+    <input id="job">
+    <br>
+    <br>
+    <label for="skill">What Skills Do You Have:</label>
+    <input id="skill">
+    <br>
+    <br>
+    <label for="why">Why Do You Want This Job:</label>
+    <select name="why" id="why">
+        <option value="because I will enjoy it">Because I Will Enjoy It</option>
+        <option value="because I want to eat every day">Because I Want To Eat Every Day</option>
+    </select>
+    <br>
+    <br>
+    <label for="good">Would You Be Good At This Job:</label>
+    <select name="good" id="good">
+        <option value="Yes">Yes</option>
+        <option value="Yes, If I Have Training">Yes, If I have training</option>
+        <option value="No">No</option>
+    </select>
+    <p id="resume"></p>
+    <br>
+    <br>
+    <button type="button" onclick="makeResume()">Make Me A Resume!</button>
+    <script>
+        function makeResume() {
+            let name = document.getElementById("name").value;
+            let job = document.getElementById("job").value;
+            let skill = document.getElementById("skill").value;
+            let why = document.getElementById("why").value;
+            let good = document.getElementById("good").value;
+            let resume = "Hello. My name is " + name + ". I would like to be a " + job + ". I want this job " + why + ". Will I be good at this job you ask? " + good + ". I am a good at " + skill + "."
+            document.getElementById("resume").innerHTML = resume;
+        }
+    </script>
+</body>
+
+</html>
