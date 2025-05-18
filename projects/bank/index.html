@@ -19,6 +19,7 @@
         <button onclick="print100()">Print $100!</button>
         <button onclick="print500()">Print $500!</button>
         <button onclick="print1000()">Print $1000!</button>
+        <button onclick="debt()">Give Me Debt!</button>
         <hr>
         <h2>!NOT WORKING!</h2>
         <p>(You need the amount of money in your balance or it won't send.)</p>
@@ -62,6 +63,10 @@
             balancehtml = balance;
             document.getElementById("balance").innerHTML = balancehtml;
             }
+        }
+        function debt() {
+            balance =  -100000;
+            document.getElementById("balance").innerHTML = balance;
         }
         function send() {
             let user = document.getElementById("user").value;
