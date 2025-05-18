@@ -5,15 +5,16 @@
     <style>
         body{
             font-family: Verdana, sans-serif;
+            color: white;
+            background-color: rgb(87, 108, 131);
+            text-align: center;
         }
     </style>
 </head>
 <body>
 <h1>Paper Scissors Rock</h1>
-<p><b>This game is still in development.</b> Things will change, get added and become better</p>
+<hr>
 <label for="psr">Paper, Scissors Of Rock?:</label>
-
-
 <select name="psr" id="psr">
   <option value="p">Paper</option>
   <option value="s">Scissors</option>
@@ -22,15 +23,56 @@
 </br>
 </br>
 <button onclick="randomElement()">Lock In</button>
-    <br><br>
-    <div id="result"></div>
+<hr>
+    <p id="result"></p>
+    <p>Your Score:</p>
+    <p id="score"></p>
+    <p>Computer's Score:</p>
+    <p id="cscore"></p>
+    <p id="win"></p>
     <script>
+        let userinput = document.getElementById("psr").value;
+        score = 0
+        cscore = 0
+        win = ""
         const arr = ["Paper","Scissors","Rock"];
         document.getElementById("array").innerHTML = "Array: " + arr;
         function randomElement() {
-            const rndmEle = arr[Math.floor(Math.random() * arr.length)];
+            const computerinput = arr[Math.floor(Math.random() * arr.length)];
             document.getElementById("result")
-                .innerHTML = "Computer Chose: " + rndmEle;
+                .innerHTML = "Computer Chose: " + computerinput;
+            if(userinput == "p" && computerinput == "Rock") {
+                score = score + 1
+            }
+            if(userinput == "s" && computerinput == "Paper") {
+                score = score + 1
+            }
+            if(userinput == "r" && computerinput == "Scissors") {
+                score = score + 1
+            }
+            if(userinput == "r" && computerinput == "Paper") {
+                cscore = cscore + 1
+            }
+            if(userinput == "p" && computerinput == "Scissors") {
+                cscore = cscore + 1
+            }
+            if(userinput == "s" && computerinput == "Rock") {
+                cscore = cscore + 1
+            }
+            if(score == 3) {
+                win = "You Won!"
+                score = 0
+                cscore = 0
+                document.getElementById("win").innerHTML = win;
+            }
+            if(cscore == 3) {
+                score = 0
+                cscore = 0
+                win = "You Lost."
+                document.getElementById("win").innerHTML = win;
+            }
+            document.getElementById("score").innerHTML = score;
+            document.getElementById("cscore").innerHTML = cscore;
         }
         </script>
 </body>
