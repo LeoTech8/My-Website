@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Messager</title>
+    <style>
+    </style>
+    </head>
+    <body>
+        <h1>Bank</h1>
+        <hr>
+        <h2>Account</h2>
+        <label for="user">Username:</label>
+        <input required id="user">
+        <hr>
+        <h2>Balance & Printing:</h2>
+        <h3>Balance:</h3>
+        <p id="balance"></p>
+        <h3>Printing:</h3>
+        <button onclick="print100()">Print $100!</button>
+        <button onclick="print500()">Print $500!</button>
+        <button onclick="print1000()">Print $1000!</button>
+        <hr>
+        <h2>Send Money:</h2>
+        <p>(You need the amount of money in your balance or it won't send.)</p>
+        <label for="who">Who:</label>
+        <input required id="who">
+        <button onclick="send()">Send $1000!</button>
+        <button onclick="sendmore()">Send $5000!</button>
+        <button onclick="sendalot()">Send $10000!</button>
+    </body>
+    <script>
+        balance = 0
+        function print100() {
+            let user = document.getElementById("user").value;
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+            balance = balance + 100
+            balancehtml = balance;
+            document.getElementById("balance").innerHTML = balancehtml;
+            }
+        }
+        function print500() {
+            let user = document.getElementById("user").value;
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+            balance = balance + 500;
+            balancehtml = balance;
+            document.getElementById("balance").innerHTML = balancehtml;
+            }
+        }
+        function print1000() {
+            let user = document.getElementById("user").value;
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+            balance = balance + 1000;
+            balancehtml = balance;
+            document.getElementById("balance").innerHTML = balancehtml;
+            }
+        }
+        function send() {
+            let user = document.getElementById("user").value;
+            let who = document.getElementById("who").value;
+            if (balance < 1000) {
+                alert("Not Enough Money To Send");
+            }
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            if (who == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+                balance = balance - 1000
+                document.getElementById("balance").innerHTML = balance;
+                alert("Sent")
+            }
+        }
+        function sendmore() {
+            let user = document.getElementById("user").value;
+            let who = document.getElementById("who").value;
+            if (balance < 5000) {
+                alert("Not Enough Money To Send");
+            }
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            if (who == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+                balance = balance - 5000
+                document.getElementById("balance").innerHTML = balance;
+                alert("Sent")
+            }
+        }
+        function sendalot() {
+            let user = document.getElementById("user").value;
+            let who = document.getElementById("who").value;
+            if (balance < 10000) {
+                alert("Not Enough Money To Send");
+            }
+            if (user == "") {
+                alert("Please Enter A Username");
+            }
+            if (who == "") {
+                alert("Please Enter A Username");
+            }
+            else{
+                balance = balance - 10000
+                document.getElementById("balance").innerHTML = balance;
+                alert("Sent")
+            }
+        }
+    </script>
+</html>
