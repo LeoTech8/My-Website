@@ -4,26 +4,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
     body {
-        font-family: Verdana, sans-serif;
-        color: white;
-        background-color: rgb(87, 108, 131);
-        text-align: center;
+        font-family: 'Courier New', monospace;
+        background-color: rgb(0,0,0);
+        text-align: left;
       }
+    p {
+    color: greenyellow;
+      }
+    a:link {
+      color: greenyellow;
+    }
+    a:visited {
+      color:greenyellow;
+      ;
+    }
+    a:hover {
+      color: green;
+    }
+    a:active {
+        color: green;
+    }
+    input {
+        border:0;outline:0;
+    }
+    input:focus {
+        outline:none!important;
+    }
+    input[type="text"], textarea {
+    background-color : #000000; 
+    color: greenyellow;
+    font-family: 'Courier New', 'monospace'
+    }
+    label {
+        color: greenyellow;
+    }
       </style>
 </head>
-<h1>Leo's Web Projects</h1>
-<p>Click the button to try one out!</p>
-<button onclick="document.location='https://www.leo-johnson.com/projects/off_brand/index.html'">Off Brand</button>
+<p>leo@leo-johnson.com $> run homepage.web</p>
+<p><b>Leo's Web Projects</b></p>
+<p><b>Click the link to try one out!</b></p>
+<p>- - - - - - - - - -</p>
+<p><b>Games</b></p>
+<a href="https://www.leo-johnson.com/projects/off_brand/index.html">Off Brandinator 3000</a>
 </br>
 </br>
-<button onclick="document.location='https://www.leo-johnson.com/projects/paper_scissors_rock/index.html'">Paper Scissors Rock (A bit broken)</button>
+<a href="https://www.leo-johnson.com/projects/paper_scissors_rock/index.html">Paper Scissors Rock <i>(A bit broken)</i></a>
 </br>
 </br>
-<button onclick="document.location='https://www.leo-johnson.com/projects/magic_8_ball/index.html'">Magic 8 Ball</button>
+<a href="https://www.leo-johnson.com/projects/magic_8_ball/index.html">Magic 8 Ball</a>
 </br>
 </br>
-<button onclick="document.location='https://leo-johnson.com/projects/resume_generator/index.html'">Resume Generator</button>
+<a href="https://www.leo-johnson.com/projects/resume_generator/index.html">Resume Generator</a>
 </br>
 </br>
-<button onclick="document.location='https://leo-johnson.com/projects/bank/index.html'">Bank (Work In Progress)</button>
-
+<a href='https://leo-johnson.com/projects/bank/index.html'">Bank <i>(Work In Progress)</i></a>
+</br>
+<p>- - - - -  - - - - -</p>
+<p>Useable command line: (Try typing list then press run)</p>
+<a href="javascript:inputreg()">run</a>
+<label for="userinput">leo@leo-johnson.com $></label>
+<input id="userinput" type="text">
+<p id="response"></p>
+<script>
+function inputreg() {
+    let input = document.getElementById("userinput").value;
+    if(input == "hi") {
+        alert("Hello!")
+    }
+    if(input == "") {
+        alert("So you want me do do nothing?")
+    }
+    if(input == "help") {
+        alert("Calling 000... (Just Kidding)")
+    }
+    if(input == "hack") {
+        alert("Infiltrating mainframe...")
+    }
+    if(input == "list") {
+        alert("Useable commands: list, hi, , help, hack, run, about, dir, listdir")
+    }
+    if(input == "run") {
+        alert("Where. I am text. I go nowhere. (Unless you press the button)")
+    }
+    if(input == "") {
+        alert("So you want me do do nothing?")
+    }    
+    if(input == "about") {
+        alert("LeoOS Version 2.1")
+    }
+    if(input == "dir") {
+        alert("/projects/")
+    }
+    if(input == "listdir") {
+        alert("index.html, bank, magic_8_ball, off_brand, paper_scissors_rock, resume_generator")
+    }
+    
+}
+</script>
