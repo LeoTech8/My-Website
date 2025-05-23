@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Homepage</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            body {
+                text-align: center;
+                font-family: Arial, Helvetica, sans-serif;
+                color: white;
+                background-color: rgb(87, 108, 131);
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Homepage</h1>
+        <label for="search">Search Google:</label>
+        <input type="text" id="search">
+        <button id="searchbutton" onclick="googsearch()">Search</button>
+        <hr>
+        <h2>Popular Sites:</h2>
+        <h3>Education:</h3>
+        <button id="searchbutton" onclick="gotomathletics()">Mathletics</button>
+        <br>
+        <br>
+        <label for="searchwiki">Search Wikipeida:</label>
+        <input type="text" id="searchwiki">
+        <button id="searchwikibutton" onclick="searchwiki()">Search</button>
+        <h3>Games:</h3>
+        <label for="searchgames">Search Coolmathgames/Crazygames:</label>
+        <input type="text" id="searchgames">
+        <button id="coolmathsearch" onclick="coolmathsearch()">Search Coolmathgames</button>
+        <button id="searchbutton" onclick="crazysearch()">Search Crazy Games</button>
+        <br>
+        <br>
+        <button id="coolmathsearch" onclick="gotocoolmath()">Coolmathgames Home Page</button>
+        <button id="searchbutton" onclick="gotocrazy()">Crazy games Home Page</button>
+        <br>
+        <br>
+        <button id="searchbutton" onclick="gotobloxd()">Bloxd.io</button>
+        <button id="searchbutton" onclick="gotodeadshot()">Deadshot.io</button>
+        <button id="searchbutton" onclick="gotoleos()">Leo's Web Projects</button>
+        <hr>
+        <button id="searchbutton" onclick="secretbutton()">Super secret button</button>
+    </body>
+    <script>
+        function googsearch() {
+            let input = document.getElementById("search").value;
+            googsearchvar = "https://www.google.com/search?q=" + input
+            window.location.replace(googsearchvar);
+        }
+        function gotomathletics() {
+            window.location.replace("https://www.login.mathletics.com")
+        }
+        function gotoleos() {
+            window.loaction.replace("https://www.leo-johnson.com/projects/")
+        }
+        function gotocrazy() {
+            window.location.replace("https://www.grazygames.com")
+        }
+        function gotocoolmath() {
+            window.location.replace("https://www.coolmathgames.com")
+        }
+        function coolmathsearch() {
+            let input = document.getElementById("searchgames").value;
+            gamessearchvar = "https://www.coolmathgames.com/search-results?query=" + input
+            window.location.replace(gamessearchvar)
+        }
+        function searchwiki() {
+            let input = document.getElementById("searchwiki").value;
+            wikisearchvar = "https://en.wikipedia.org/wiki" + input
+            window.location.replace(wikisearchvar)
+        }
+        function crazysearch() {
+            let input = document.getElementById("searchgames").value;
+            gamessearchvar = "https://www.crazygames.com/search?q=" + input
+            window.location.replace(gamessearchvar)
+        }
+        function gotobloxd() {
+            window.location.replace("https://www.bloxd.io")
+        }
+        function gotodeadshot() {
+            window.location.replace("https://www.deadshot.io")
+        }
+        function secretbutton() {
+            alert("How did you find this secret button!? I hid it so well!")
+            alert("Homepage V1 By Leo - Google, Wikipedia, Mathletics, Coolmathgames, Crazygames, Bloxd.io & Deadshot.io are not mine. (Leo's web projects is mine though)")
+            alert("Oh, and before I go, 2 + 2 = 5 btw :)")
+        }
+    </script>
+</html>
