@@ -6,23 +6,41 @@
         Off Brandinator 3000
     </title>
 <style>
-body {
-  font-family: Verdana, sans-serif;
-  color: white;
-  background-color: rgb(87, 108, 131);
-  text-align: center;
-}
+    body {
+    font-family: 'Courier New', monospace;  color: greenyellow;
+    background-color: rgb(0, 0, 0);
+    text-align: left;
+    }
+    p {
+    color: greenyellow;
+      }
+    a:link {
+      color: greenyellow;
+    }
+    a:visited {
+      color:greenyellow;
+      ;
+    }
+    a:hover {
+      color: green;
+    }
+    a:active {
+        color: green;
+    }
 
 </style>
 </head>
 <body>
-    <h2>
+    <p>leo@leo-johnson.com $> start offbrand.web</p>
+    <p>
+        <b>
         Off Brandinator 3000
-    </h2>
+    <p>
     <p>
         Press the button to get off brand items.
+    </b>
     </p>
-    <button onclick="randomElement()">Get off brand</button>
+    <a href="javascript:randomElement()">Get off brand</a>
     <br><br>
     <div id="result"></div>
     <script>
@@ -31,7 +49,7 @@ body {
             "Weet-Bix? Nah. We got Wheat-Chuncks.","Nintendo Wii? Nah. We Got WiWi.","Solo? Nah. We got Duo.","Mars Bar? Nah. We got Saturn Bar.","Nike? Nah. We got Hike.",
             "Snickers? Nah. We got Snipers.","Dr. Pepper? Nah. We got Dr. Salt.","Tick Tack? Nah. We got Tcc Tcc","Mountain Dew? Nah. We got Mountain Shoutin","Mountain Dew? Nah. We got Mountain View",
             "Dr. Pepper? Nah. We got Dr. Bob.","Game Boy? Nah. We got Game Man.","Doritos? Nah. We got Detos.","Oreos? Nah. We got Cream Betweens.","Kit-Kat? Nah. We got Take-It (4 Fingers)","M&M? Nah. We got H&H",
-            "Jarrah Hot Chocolate? Nah. We got Gum tree Hot Chocolate","Minecraft? Nah. We got MineBuild.","Fortnight? Nah. We got 2 weeks."
+            "Jarrah Hot Chocolate? Nah. We got Gum tree Hot Chocolate"
     ]
         document.getElementById("array").innerHTML = "Array: " + arr;
         function randomElement() {
