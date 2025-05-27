@@ -42,7 +42,7 @@
       </style>
 </head>
 <body onload="checkCookie()">
-<p id="welcomeMessage">Cookiehandler error: Reload page</p>
+<p id="welcomeMessage">Cookiehandler error: Page_Reload_Err</p>
 <p>leo@leo-johnson.com $> run homepage.web</p>
 <p><b>Leo's Web Projects</b></p>
 <p><b>Click the link to try one out!</b></p>
@@ -156,6 +156,7 @@ function checkCookie() {
      user = prompt("Please enter your name: (This will be stored as a cookie in your browser)","");
      if (user != "" && user != null) {
        setCookie("username", user, 30);
+       window.location.replace("https://www.leo-johnson.com/projects/index.html");
      }
   }
 }
