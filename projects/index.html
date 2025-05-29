@@ -59,6 +59,9 @@
 <a href="https://www.leo-johnson.com/projects/magic_8_ball/index.html">Magic 8 Ball</a>
 </br>
 </br>
+<a href="https://www.leo-johnson.com/projects/clicker/index.html">Clicker</a>
+</br>
+</br>
 <a href="https://www.leo-johnson.com/projects/resume_generator/index.html">Resume Generator</a>
 </br>
 </br>
@@ -128,13 +131,16 @@ function inputreg() {
     
 }
 function setCookie(cname,cvalue,exdays) {
+  console.log("Creating cookie...")
   const d = new Date();
   d.setTime(d.getTime() + (exdays*24*60*60*1000));
   let expires = "expires=" + d.toUTCString();
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  console.log("Done!")
 }
 
 function getCookie(cname) {
+  console.log("Getting cookie...")
   let name = cname + "=";
   let decodedCookie = decodeURIComponent(document.cookie);
   let ca = decodedCookie.split(';');
@@ -148,29 +154,35 @@ function getCookie(cname) {
     }
   }
   return "";
+  console.log("Done!")
 }
 
 function checkCookie() {
+  console.log("Getting cookie!")
   let user = getCookie("username");
   if (user != "") {
     let userwelcomeprompt = "Welcome back " + user + "!";
     document.getElementById("welcomeMessage").innerHTML = userwelcomeprompt;
+    console.log("Done!")
   } else {
      user = prompt("Please enter your name: (This will be stored as a cookie in your browser)","");
      if (user != "" && user != null) {
        setCookie("username", user, 30);
+       console.log("Done. Reloading...")
        window.location.replace("https://www.leo-johnson.com/projects/index.html");
      }
   }
 }
 
 function changeusername() {
+    console.log("Deleting cookie...")
     var cookies = document.cookie.split(";");
     for (var i = 0; i < cookies.length; i++) {
         var cookie = cookies[i];
         var eqPos = cookie.indexOf("=");
         var name = eqPos > -1 ? cookie.substring(0, eqPos) : cookie;
         document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        console.log("Done. Reloading...")
         window.location.replace("https://www.leo-johnson.com/projects/index.html");
 }
 }
