@@ -81,7 +81,7 @@
 <a href="javascript:changeusername()">Change Username</a>
 <br>
 <br>
-<a href="javascript:cleanTheme">Change Theme To Clean</a>
+<a href="javascript:cleanTheme()">Change Theme To Clean</a>
 <p>Useable command line: (Try typing list then press run)</p>
 <a href="javascript:inputreg()">run</a>
 <label for="userinput">leo@leo-johnson.com $></label>
@@ -187,7 +187,7 @@ function changeusername() {
 }
 }
 function cleanTheme() {
-  setCookie("theme","clean",365) 
-  window.location.replace("https://www.leo-johnson.com/projects/index.html");
+    setCookie("theme","clean",365) 
+    window.location.replace("https://www.leo-johnson.com/projects/index.html");
 }
 </script>
