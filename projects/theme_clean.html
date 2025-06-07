@@ -64,6 +64,7 @@
 <br>
 <br>
 <a href="javascript:retroTheme()">Change Theme To Retro</a>
+<a href="javascript:darkTheme()">Change Theme To Clean (Dark)</a>
 </body>
 <script>
 function setCookie(cname,cvalue,exdays) {
@@ -124,6 +125,10 @@ function changeusername() {
 }
 function retroTheme() {
   setCookie("theme","retro",365) 
+  window.location.replace("https://www.leo-johnson.com/projects/index.html");
+}
+function darkTheme() {
+  setCookie("theme","dark",365) 
   window.location.replace("https://www.leo-johnson.com/projects/index.html");
 }
 </script>
