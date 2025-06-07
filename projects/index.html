@@ -44,7 +44,11 @@ function checkCookie() {
     console.log("Checked for theme sucsessfuly! Applying theme (Clean).")
     window.location.replace("https://www.leo-johnson.com/projects/theme_clean.html");
   }
-  if (theme == "") {
+  if (theme == "dark") {
+    console.log("Checked for theme sucsessfuly! Applying theme (Darm).")
+    window.location.replace("https://www.leo-johnson.com/projects/theme_dark.html");
+  }
+  else {
        console.log("Checked for user sucsessfuly! No theme is set. Redirecting to default theme (clean)...")
        window.location.replace("https://www.leo-johnson.com/projects/theme_clean.html");
      }
