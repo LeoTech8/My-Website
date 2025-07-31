@@ -44,16 +44,25 @@
         <button id="searchbutton" onclick="secretbutton()">Super secret button</button>
     </body>
     <script>
+        function main(){
+            let name = getCookie("username")
+            if (name == "") {
+                alert("Invalid Username! Press ok to reset cookie.")
+                window.location.replace("https://www.leo-johnson.com/projects/index.html")
+            }
+        }
+
+        
         function googsearch() {
             let input = document.getElementById("search").value;
             googsearchvar = "https://www.google.com/search?q=" + input
             window.location.replace(googsearchvar);
         }
         function gotomathletics() {
-            window.location.replace("https://www.login.mathletics.com")
+            window.location.replace("https://login.mathletics.com")
         }
         function gotoleos() {
-            window.loaction.replace("https://www.leo-johnson.com/projects/")
+            window.loaction.replace("https://www.leo-johnson.com/projects/index.html")
         }
         function gotocrazy() {
             window.location.replace("https://www.crazygames.com")
@@ -87,5 +96,22 @@
             alert("Homepage V1 By Leo - Google, Wikipedia, Mathletics, Coolmathgames, Crazygames, Bloxd.io & Deadshot.io are not mine. (Leo's web projects is mine though)")
             alert("Oh, and before I go, 2 + 2 = 5 btw :)")
         }
+
+        function getCookie(cname) {
+  console.log("Getting Cookie...")
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
     </script>
 </html>
