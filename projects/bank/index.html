@@ -7,11 +7,11 @@
     </head>
     <body onload=main()>
         <h1>Bank</h1>
-        <p>Disclaimer so I don't go to court: THIS IS NOT REAL MONEY. Just a game :) Have fun.</p>
+        <p>Disclaimer: THIS IS NOT REAL MONEY. Just a game :) Have fun.</p>
         <hr>
         <h2>Account</h2>
-        <label for="user">Username:</label>
-        <input required id="user">
+        <p>Username:</p>
+        <p id=username></p>
         <hr>
         <h2>Balance & Printing:</h2>
         <h3>Balance:</h3>
@@ -38,6 +38,7 @@
                 alert("Invalid Username! Press ok to reset cookie.")
                 window.location.replace("https://www.leo-johnson.com/projects/index.html")
             }
+            document.getElementById("username").innerHTML = name;
         }
 
                 function getCookie(cname) {
