@@ -5,7 +5,7 @@
     <style>
     </style>
     </head>
-    <body>
+    <body onload=main()>
         <h1>Bank</h1>
         <p>Disclaimer so I don't go to court: THIS IS NOT REAL MONEY. Just a game :) Have fun.</p>
         <hr>
@@ -31,6 +31,31 @@
         <button onclick="sendalot()">Send $10000!</button>
     </body>
     <script>
+
+        function main(){
+            let name = getCookie("username")
+            if (name == "") {
+                alert("Invalid Username! Press ok to reset cookie.")
+                window.location.replace("https://www.leo-johnson.com/projects/index.html")
+            }
+        }
+
+                function getCookie(cname) {
+  console.log("Getting Cookie...")
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
         balance = 0
         function print100() {
             let user = document.getElementById("user").value;
