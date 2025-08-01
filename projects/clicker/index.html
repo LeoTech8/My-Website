@@ -54,6 +54,10 @@ function getCookie(cname) {
 }
 
 function checkCookie() {
+  let name = getCookie("username")
+  if (name == "") {
+      alert("Invalid Username! Press ok to reset cookie.")
+  }
   let clicksCookie = getCookie("clicks");
   presses = Number(clicksCookie)
   presses = clicksCookie
