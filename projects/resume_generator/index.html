@@ -14,10 +14,10 @@
     </style>
 </head>
 
-<body>
+<body onload="main=()">
     <h1>Welcome To The Resume Generator</h1>
-    <label for="name">Name:</label>
-    <input id="name">
+    <p>Name:</p>
+    <p id=name></p>
     <br>
     <br>
     <label for="job">What Job Do You Want:</label>
@@ -47,8 +47,33 @@
     <br>
     <p id="resume"></p>
     <script>
+            function getCookie(cname) {
+  console.log("Getting Cookie...")
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+  console.log("Got cookie...")
+}
+
+function main() {
+  let name = getCookie("username")
+  if (name == "") {
+      alert("Invalid Username! Press ok to reset cookie.")
+      window.loaction.replace("https://www.leo-johnson.com/projects/index.html")
+  }
+  document.getElementById("name").innerHTML = name;
+
         function makeResume() {
-            let name = document.getElementById("name").value;
             let job = document.getElementById("job").value;
             let skill = document.getElementById("skill").value;
             let why = document.getElementById("why").value;
@@ -58,5 +83,6 @@
         }
     </script>
 </body>
+    
 
 </html>
