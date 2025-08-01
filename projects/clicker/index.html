@@ -57,6 +57,7 @@ function checkCookie() {
   let name = getCookie("username")
   if (name == "") {
       alert("Invalid Username! Press ok to reset cookie.")
+      window.loaction.replace("https://www.leo-johnson.com/projects/index.html")
   }
   let clicksCookie = getCookie("clicks");
   presses = Number(clicksCookie)
