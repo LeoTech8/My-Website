@@ -14,7 +14,7 @@
     </style>
 </head>
 
-<body onload="checkCookie()">
+<body">
     <h1>Clicker Game!</h1>
     <h2>Score saves automaticly!</h2>
     <p id="presses"></p>
@@ -52,13 +52,6 @@ function getCookie(cname) {
   return "";
   console.log("Got cookie...")
 }
-
-function checkCookie() {
-  let name = getCookie("username")
-  if (name == "") {
-      alert("Invalid Username! Press ok to reset cookie.")
-      window.loaction.replace("https://www.leo-johnson.com/projects/index.html")
-  }
   let clicksCookie = getCookie("clicks");
   presses = Number(clicksCookie)
   presses = clicksCookie
