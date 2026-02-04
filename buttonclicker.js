@@ -141,7 +141,7 @@ function updateDisplay() {
             let offlineEarnings = secondsOffline * clicksPerSecond / 2;
             if (offlineEarnings > 0) {
                 clicks += offlineEarnings;
-                alert(`While you were away for ${formatNumber(secondsOffline)}s, you earned ${formatNumber(offlineEarnings)} clicks!`);
+                alert(`While you were away for ${formatNumber(secondsOffline)} seconds, you earned ${formatNumber(offlineEarnings)} clicks!`);
             }
 
             updateDisplay();
