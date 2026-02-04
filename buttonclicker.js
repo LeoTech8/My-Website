@@ -99,7 +99,7 @@
 function updateDisplay() {
     document.getElementById("clicksHTMLDomText").innerHTML = "Clicks: " + formatNumber(clicks);
     document.getElementById("cpc").innerHTML = 
-        "Clicks Per Press: " + formatNumber(clicksPerpress) + " (Cost: " + formatNumber(CpCprice) + ")";
+        "Clicks Per Click: " + formatNumber(clicksPerpress) + " (Cost: " + formatNumber(CpCprice) + ")";
     document.getElementById("cpsText").innerHTML = 
         "Clicks Per Second: " + formatNumber(clicksPerSecond) + " (Cost: " + formatNumber(cpsPrice) + ")";
 }
