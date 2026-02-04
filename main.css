@@ -1,0 +1,47 @@
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #1e1e1e;
+        color: #f0f0f0;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #0095ff;
+        text-shadow: 0 0 10px #0088ff;
+    }
+
+    button {
+        background-color: #333;
+        color: #0095ff;
+        border: 2px solid #0088ff;
+        border-radius: 8px;
+        padding: 10px 20px;
+        margin: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    button:hover {
+        background-color: #0676d7;
+        color: #1e1e1e;
+        box-shadow: 0 0 10px #0088ff;
+    }
+
+    hr {
+        border: none;
+        height: 2px;
+        background-color: #0088ff;
+        margin: 15px 0;
+    }
+
+    #clicksHTMLDomText, #cpc, #cpsText {
+        font-size: 18px;
+        margin: 10px 0;
+    }
+
+    #x2ClicksPerClick, #cpsUpgrade, #settingsMenu {
+        margin-top: 15px;
+    }
