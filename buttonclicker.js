@@ -205,6 +205,16 @@ function mainMenuf() {
 // ======= SAVE FILE FUNCTIONS =======
 function deleteSave() {
     localStorage.removeItem("save");
+    clicks = 0;
+    clicksPerpress = 1;
+    CpCprice = 10;
+    clicksPerSecond = 0;
+    cpsPrice = 25;
+
+// STOCK VARIABLES
+let stockPrice = 100;
+let stockHistory = [stockPrice];
+let sharesOwned = 0;
     alert("Save deleted!");
 }
 
@@ -217,18 +227,34 @@ function downloadSave() {
     a.download = "clicker_save.json";
     a.click();
 }
-
 function uploadSave(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = function(e) {
-        localStorage.setItem("save", e.target.result);
-        loadGame();
-        updateDisplay();
-        updateStockDisplay();
-        drawStockGraph();
-        alert("Save uploaded!");
+        try {
+            // Parse the JSON to make sure it's valid
+            const saveData = JSON.parse(e.target.result);
+
+            // Save to localStorage
+            localStorage.setItem("save", JSON.stringify(saveData));
+
+            // Load the game from save
+            loadGame();  // assuming this reads from localStorage
+
+            // Update UI
+            updateDisplay();
+            updateStockDisplay();
+            drawStockGraph();
+
+            alert("Save uploaded!");
+        } catch (err) {
+            alert("Invalid JSON file!");
+            console.error(err);
+        }
     };
+
     reader.readAsText(file);
 }
+
