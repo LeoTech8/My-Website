@@ -6,11 +6,12 @@
 </head>
 
 <body onload="startClicks()">
+    <!-- MAIN MENU -->
     <div id="mainMenu">
         <h1>Button Clicker</h1>
-        <p id="clickesSinceStarted"></p>
-        <button onclick="settingsMenuf()">Settings</button>
+        <button onclick="settingsMenuf()">Settings (Yes, It's Broken)</button>
         <hr>
+
         <button onclick="buttonPressed()">Press Button</button>
         <p id="clicksHTMLDomText"></p>
         <p id="cpc"></p>
@@ -25,24 +26,35 @@
             <hr>
             <button onclick="buyCps()">x2 Clicks Per Second</button>
         </div>
+
+        <hr>
+        <p id="stockPriceText"></p>
+        <p id="sharesText"></p>
+        <button onclick="buyStock(1)">Buy 1</button>
+        <button onclick="sellStock(1)">Sell 1</button>
+        <button onclick="buyStock(10)">Buy 10</button>
+        <button onclick="sellStock(10)">Sell 10</button>
+        <button onclick="buyStock(100)">Buy 100</button>
+        <button onclick="sellStock(100)">Sell 100</button>
+        <button onclick="buyStock(1000)">Buy 1000</button>
+        <button onclick="sellStock(1000)">Sell 1000</button>
+        <button onclick="buyStock(10000)">Buy 10000</button>
+        <button onclick="sellStock(10000)">Sell 10000</button>
+        <br>
+        <canvas id="stockGraph" width="400" height="150"></canvas>
     </div>
 
-    <div id="settingsMenu">
+    <!-- SETTINGS MENU -->
+    <div id="settingsMenu" style="display:none">
         <h1>Settings</h1>
         <button onclick="deleteSave()">Delete Save</button>
-        <p>Experamental (May Not Work!)</p>
         <button onclick="downloadSave()">Download Save File (.JSON)</button>
-        <input type="file" id="uploadFile" style="display:none" accept=".json" onchange="uploadSave(event)">    
-        <button onclick="uploadSave()">Upload Save File (.JSON)(NOT WORKING)</button>
+        <input type="file" id="uploadFile" style="display:none" accept=".json" onchange="uploadSave(event)">
+        <button onclick="document.getElementById('uploadFile').click()">Upload Save File (.JSON)</button>
         <button onclick="mainMenuf()">Back</button>
     </div>
-        <div id="about">
-        <h1>About</h1>
-        <p>Version 2.1</p>
-        <p>25 clicks = x2 clicks per second (Cost x2 Every Purchase)</p>
-        <p>10 clicks = x2 clicks per click (Cost x2 Every Purchase)</p>
-        <p>This is a simple clicker game. The game will save automaticly and you earn clicks offline (half of your clicks per second) but full clicks per second when your web browser is on. If you are offline for more than 24 hours, you will stop earning until you log back in. Have fun!</p>
-    </div>
 
+    <!-- LINK JS -->
     <script src="buttonclicker.js"></script>
-        
+</body>
+</html>
