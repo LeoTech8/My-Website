@@ -10,7 +10,6 @@
         let cpsButton;
         let mainMenu;
         let settingsMenu;
-        alert ("hi")
 
         // ======= NUMBER FORMAT FUNCTION =======
         function formatNumber(num) {
