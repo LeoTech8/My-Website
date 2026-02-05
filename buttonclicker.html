@@ -9,7 +9,7 @@
     <!-- MAIN MENU -->
     <div id="mainMenu">
         <h1>Button Clicker</h1>
-        <button onclick="settingsMenuf()">Settings (Yes, It's Broken)</button>
+        <button onclick="settingsMenuf()">Settings</button>
         <hr>
 
         <button onclick="buttonPressed()">Press Button</button>
@@ -36,10 +36,17 @@
         <button onclick="sellStock(10)">Sell 10</button>
         <button onclick="buyStock(100)">Buy 100</button>
         <button onclick="sellStock(100)">Sell 100</button>
-        <button onclick="buyStock(1000)">Buy 1000</button>
-        <button onclick="sellStock(1000)">Sell 1000</button>
-        <button onclick="buyStock(10000)">Buy 10000</button>
-        <button onclick="sellStock(10000)">Sell 10000</button>
+        <button onclick="buyStock(1000)">Buy 1K</button>
+        <button onclick="sellStock(1000)">Sell 1K</button>
+        <button onclick="buyStock(10000)">Buy 10K</button>
+        <button onclick="sellStock(10000)">Sell 10K</button>
+        <br>
+        <button onclick="buyStock(1000000)">Buy 1M</button>
+        <button onclick="sellStock(1000000)">Sell 1M</button>
+        <button onclick="buyStock(1000000000)">Buy 1B</button>
+        <button onclick="sellStock(1000000000)">Sell 1B</button>
+        <button onclick="buyStock(1000000000000)">Buy 1T</button>
+        <button onclick="sellStock(1000000000000)">Sell 1T</button>
         <br>
         <canvas id="stockGraph" width="400" height="150"></canvas>
     </div>
@@ -49,8 +56,8 @@
         <h1>Settings</h1>
         <button onclick="deleteSave()">Delete Save</button>
         <button onclick="downloadSave()">Download Save File (.JSON)</button>
-        <input type="file" id="uploadFile" style="display:none" accept=".json" onchange="uploadSave(event)">
-        <button onclick="document.getElementById('uploadFile').click()">Upload Save File (.JSON)</button>
+    <input type="file" id="uploadFile" style="display:none" accept=".json" onchange="uploadSave(event)">
+    <button onclick="document.getElementById('uploadFile').click()">Upload Save File (.JSON)</button>
         <button onclick="mainMenuf()">Back</button>
     </div>
 
