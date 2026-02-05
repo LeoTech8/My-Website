@@ -4,18 +4,30 @@
         let CpCprice = 10;
         let clicksPerSecond = 0;
         let cpsPrice = 25;
+        let clickesSinceStarted = 0;
 
         let x2CpcButton;
         let cpsButton;
         let mainMenu;
         let settingsMenu;
+        alert ("hi")
 
         // ======= NUMBER FORMAT FUNCTION =======
         function formatNumber(num) {
-            if (num >= 1e12) return (num / 1e12).toFixed(1) + "T";
-            if (num >= 1e9)  return (num / 1e9).toFixed(1) + "B";
-            if (num >= 1e6)  return (num / 1e6).toFixed(1) + "M";
-            if (num >= 1e3)  return (num / 1e3).toFixed(1) + "K";
+            if (num >= 1e42) return (num / 1e42).toFixed(1) + " Tredecillion";
+            if (num >= 1e39) return (num / 1e39).toFixed(1) + " Duodecillion";
+            if (num >= 1e36) return (num / 1e36).toFixed(1) + " Undecillion";
+            if (num >= 1e33) return (num / 1e33).toFixed(1) + " Decillion";
+            if (num >= 1e30) return (num / 1e30).toFixed(1) + " Nonillion";
+            if (num >= 1e27) return (num / 1e27).toFixed(1) + " Octillion";
+            if (num >= 1e24) return (num / 1e24).toFixed(1) + " Septillion";
+            if (num >= 1e21)  return (num / 1e21).toFixed(1) + " Sextillion";
+            if (num >= 1e18)  return (num / 1e18).toFixed(1) + " Quintillion";
+            if (num >= 1e15)  return (num / 1e15).toFixed(1) + " Quadrillion";
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + " Trillion";
+            if (num >= 1e9)  return (num / 1e9).toFixed(1) + " Billion";
+            if (num >= 1e6)  return (num / 1e6).toFixed(1) + " Million";
+            if (num >= 1e3)  return (num / 1e3).toFixed(1) + " Thousand";
             return num;
         }
 
@@ -26,6 +38,7 @@
             cpsButton = document.getElementById("cpsUpgrade");
             mainMenu = document.getElementById("mainMenu");
             settingsMenu = document.getElementById("settingsMenu");
+            clickesSinceStarted = document.getElementById("clickesSinceStarted");
 
             // Hide upgrades and settings initially
             x2CpcButton.style.display = "none";
@@ -56,7 +69,6 @@
 
         function Cpcbutton() {
             if (clicks >= CpCprice) {
-                clicks = CpCprice;
                 clicksPerpress *= 2;
                 CpCprice *= 2;
                 updateDisplay();
@@ -66,7 +78,6 @@
 
         function buyCps() {
             if (clicks >= cpsPrice) {
-                clicks = cpsPrice;
                 clicksPerSecond = clicksPerSecond === 0 ? 2 : clicksPerSecond * 2;
                 cpsPrice *= 2;
                 updateDisplay();
@@ -86,14 +97,13 @@
         }
 
         function deleteSave() {
-            if (confirm("Are you sure you want to delete your save?")) {
-                localStorage.removeItem("save");
-                alert("Save Deleted");
-                location.reload();
-            } else {
-                alert("Cancelled");
+            clicks = 0;
+            clicksPerpress = 1;
+            CpCprice = 10;
+            clicksPerSecond = 0;
+            cpsPrice = 25;
+            alert("Save Deleted")
             }
-        }
 
         // ======= DISPLAY HELPERS =======
 function updateDisplay() {
@@ -102,6 +112,7 @@ function updateDisplay() {
         "Clicks Per Click: " + formatNumber(clicksPerpress) + " (Cost: " + formatNumber(CpCprice) + ")";
     document.getElementById("cpsText").innerHTML = 
         "Clicks Per Second: " + formatNumber(clicksPerSecond) + " (Cost: " + formatNumber(cpsPrice) + ")";
+    document.getElementById("clickesSinceStarted").innerHTML = "Clicks since started: " + "Coming Soon!";
 }
 
 
