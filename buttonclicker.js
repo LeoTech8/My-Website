@@ -92,7 +92,15 @@ function buyCps() {
 
 // ======= STOCK LOGIC =======
 function updateStock() {
-    let changePercent = (Math.random() * 2) - 1; // -1% to +1%
+    let changePercent;
+
+    if (Math.random() < 0.7) {
+        // 70% chance to go up
+        changePercent = Math.random() * 1; 
+    } else {
+        // 30% chance to go down
+        changePercent = -(Math.random() * 1);
+    }
     stockPrice += stockPrice * (changePercent / 100);
     stockPrice = Math.max(1, Math.round(stockPrice));
 
