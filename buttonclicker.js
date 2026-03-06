@@ -97,6 +97,9 @@ function updateStock() {
     if (Math.random() < 0.7) {
         // 70% chance to go up
         changePercent = Math.random() * 1; 
+    else if (Math.random() < 0.02) {
+        changePercent =-(Math.random() * 10)
+    }
     } else {
         // 30% chance to go down
         changePercent = -(Math.random() * 1);
