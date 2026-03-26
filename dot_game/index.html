@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Inspired Minds Project</title>
+        <style>
+            body {
+                background-color: rgb(44, 42, 42);
+                color: white; 
+            }
+            h1 {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+            canvas {
+            border: 1px solid white;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1 onclick="easteregg()">Inspired Minds Game</h1>
+        <button onclick="toggleSlowMode()">Slow Motion</button><button onclick="togglePause()">Pause</button><button onclick="hardMode()">Hard / Easy</button>
+        <button id="startBtn">Start Game</button><a href="multiplayer.html"><button>Multiplayer</button></a>
+        <br>
+        <br>
+        <canvas id="gameCanvas" width="1350" height="650 ">
+        Your browser does not support the HTML canvas element. (Gee it must be quite old)
+        </canvas>
+        <script src="src/script.js"></script
+</script>
+    </body>
+</html>
