@@ -1,25 +1,32 @@
-const canvas = document.getElementById('gameCanvas'); 
-const ctx = canvas.getContext('2d'); 
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-function easteregg() {
-    window.location.href = 'src/job.png'; 
-}
+function easteregg() { window.location.href = 'src/job.png'; }
 
 let dots = [];
 let score = 0;
-let player = { x: 200, y: 200, width: 20, height: 20, radius: 10, speed: 6 };
+// UPDATED: Added vx and vy to player for bouncing physics
+let player = { 
+    x: 200, 
+    y: 200, 
+    width: 20, 
+    height: 20, 
+    radius: 10, 
+    speed: 6,
+    vx: 0,
+    vy: 0
+};
 let username = null;
 let keys = {};
-let isSlowMode = false; 
+let isSlowMode = false;
 let pause = false;
 let hard = false;
-let gameRunning = false; // NEW: Track if game has started
+let gameRunning = false;
 
-// NEW: Start Button Logic
 const startBtn = document.getElementById('startBtn');
 startBtn.addEventListener('click', () => {
     gameRunning = true;
-    startBtn.style.display = 'none'; // Hide button
+    startBtn.style.display = 'none';
     resetGame();
 });
 
@@ -57,7 +64,7 @@ function hardMode() {
 }
 
 function spawnDot() {
-    if (!gameRunning) return; // Only spawn if playing
+    if (!gameRunning) return;
     score = score + 1;
     let x, y;
     if (Math.random() < 0.5) {
@@ -67,22 +74,30 @@ function spawnDot() {
         x = Math.random() * canvas.width;
         y = Math.random() < 0.5 ? 0 : canvas.height;
     }
-    dots.push({ x: x, y: y, radius: 10, speed: isSlowMode ? 1 : 5 });
+    dots.push({ 
+        x: x, 
+        y: y, 
+        radius: 10, 
+        speed: isSlowMode ? 1 : 5,
+        vx: 0, 
+        vy: 0 
+    });
 }
 
 function resetGame() {
     score = 0;
     player.x = 200;
     player.y = 200;
-    dots = []; 
-    spawnDot(); 
+    player.vx = 0;
+    player.vy = 0;
+    dots = [];
+    spawnDot();
     keys = {};
 }
 
 async function fetchData(url) {
     try {
-        // 'no-cors' mode bypasses common browser blocks for simple submissions
-        await fetch(url, { mode: 'no-cors' }); 
+        await fetch(url, { mode: 'no-cors' });
         console.log("Score submitted successfully!");
     } catch (error) {
         console.error("Leaderboard Error:", error);
@@ -90,51 +105,104 @@ async function fetchData(url) {
 }
 
 function onPlayerTouched() {
-    gameRunning = false; // Stop the game
+    gameRunning = false;
     startBtn.innerText = "Restart Game";
-    startBtn.style.display = 'block'; // Show button again
-    alert('You have been eaten - Score: ' + score); 
+    startBtn.style.display = 'block';
+    alert('You have been eaten - Score: ' + score);
     username = prompt("Username for leaderboard: ");
-    //fetchData("http://dreamlo.com/lb/MFDT9FibuEW1BV8M_gS7iA0R0Wenq200iWQLfVe3an3w"+username+"/"+score);
-    
+}
+
+function resolveDotCollisions() {
+    const flingStrength = 20; 
+    for (let i = 0; i < dots.length; i++) {
+        for (let j = i + 1; j < dots.length; j++) {
+            let d1 = dots[i];
+            let d2 = dots[j];
+            const dx = d2.x - d1.x;
+            const dy = d2.y - d1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = d1.radius + d2.radius;
+            if (distance < minDistance) {
+                const angle = Math.atan2(dy, dx);
+                d1.vx -= Math.cos(angle) * flingStrength;
+                d1.vy -= Math.sin(angle) * flingStrength;
+                d2.vx += Math.cos(angle) * flingStrength;
+                d2.vy += Math.sin(angle) * flingStrength;
+                const overlap = minDistance - distance;
+                d1.x -= Math.cos(angle) * (overlap / 2);
+                d1.y -= Math.sin(angle) * (overlap / 2);
+                d2.x += Math.cos(angle) * (overlap / 2);
+                d2.y += Math.sin(angle) * (overlap / 2);
+            }
+        }
+    }
 }
 
 function updateDots() {
     dots.forEach(dot => {
-        const dx = player.x - dot.x;
-        const dy = player.y - dot.y;
+        const dx = (player.x + player.width/2) - dot.x;
+        const dy = (player.y + player.height/2) - dot.y;
         const angle = Math.atan2(dy, dx);
-        dot.x += Math.cos(angle) * dot.speed;
-        dot.y += Math.sin(angle) * dot.speed;
-
+        dot.vx += Math.cos(angle) * (dot.speed * 0.05);
+        dot.vy += Math.sin(angle) * (dot.speed * 0.05);
+        dot.vx *= 0.98;
+        dot.vy *= 0.98;
+        dot.x += dot.vx;
+        dot.y += dot.vy;
+        if (dot.x < 0 || dot.x > canvas.width) dot.vx *= -1.2;
+        if (dot.y < 0 || dot.y > canvas.height) dot.vy *= -1.2;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < (player.radius + dot.radius)) {
             onPlayerTouched();
         }
     });
+    resolveDotCollisions();
 }
 
 document.addEventListener('keydown', (e) => keys[e.key] = true);
 document.addEventListener('keyup', (e) => keys[e.key] = false);
 
 function update() {
-    if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
-    if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
-    if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-    if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
-    if (keys['p']) togglePause();    
+    // Player acceleration based on keys
+    const accel = 0.8;
+    if (keys['ArrowUp'] || keys['w']) player.vy -= accel;
+    if (keys['ArrowDown'] || keys['s']) player.vy += accel;
+    if (keys['ArrowLeft'] || keys['a']) player.vx -= accel;
+    if (keys['ArrowRight'] || keys['d']) player.vx += accel;
+    
+    if (keys['p']) togglePause();
     if (keys[' ']) toggleSlowMode();
     if (keys['h']) hardMode();
-    
-    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+
+    // Apply player velocity and friction
+    player.vx *= 0.95;
+    player.vy *= 0.95;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // NEW: Player wall bounce logic
+    if (player.x < 0) {
+        player.x = 0;
+        player.vx *= -1.5; // Bounce back with extra force
+    } else if (player.x > canvas.width - player.width) {
+        player.x = canvas.width - player.width;
+        player.vx *= -1.5;
+    }
+
+    if (player.y < 0) {
+        player.y = 0;
+        player.vy *= -1.5;
+    } else if (player.y > canvas.height - player.height) {
+        player.y = canvas.height - player.height;
+        player.vy *= -1.5;
+    }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#45ff01'; 
+    ctx.fillStyle = '#45ff01';
     ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillStyle = '#ff0000'; 
+    ctx.fillStyle = '#ff0000';
     dots.forEach(dot => {
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
@@ -144,7 +212,7 @@ function draw() {
 }
 
 function gameLoop() {
-    if (gameRunning && !pause) { // Only update if game is active
+    if (gameRunning && !pause) {
         update();
         updateDots();
     }
@@ -152,6 +220,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Initialize
-setInterval(spawnDot, 15000); 
+setInterval(spawnDot, 15000);
 gameLoop();
