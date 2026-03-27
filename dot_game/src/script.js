@@ -109,7 +109,7 @@ function onPlayerTouched() {
     startBtn.innerText = "Restart Game";
     startBtn.style.display = 'block';
     alert('You have been eaten - Score: ' + score);
-    username = prompt("Username for leaderboard: ");
+    //username = prompt("Username for leaderboard: ");
 }
 
 function resolveDotCollisions() {
