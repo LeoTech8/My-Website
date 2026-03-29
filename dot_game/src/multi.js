@@ -1,4 +1,4 @@
-Already done!: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en-AU">
 <head>
     <meta charset="UTF-8">
