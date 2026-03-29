@@ -11,15 +11,15 @@ window.onload = () => {
     let isHost = false;
     let gameRunning = false;
     let keys = {};
-    const lerpAmount = 0.15; // Smoothness: 0.1 is slow/smooth, 0.3 is fast/snappy
+    const lerpAmount = 0.15;
 
     // The Host (Square)
     let hostPlayer = { x: 600, y: 300, width: 20, height: 20, speed: 6, color: '#45ff01', targetX: 600, targetY: 300 };
     
     // All other players (Circles)
     let remotePlayers = {}; 
-    let connections = []; 
-    let myConn;
+    let connections = []; // ARRAY to fix the "Connection Closed" issue
+    let myConn;           // Client's single link to host
 
     const colors = ['#ff0000', '#0099ff', '#ff00ff', '#ffff00', '#ff9900', '#00ffff', '#ffffff'];
 
@@ -34,18 +34,24 @@ window.onload = () => {
 
     peer.on('open', (id) => {
         myIdDiv.innerText = "My ID: " + id;
-        statusDiv.innerText = "Status: Ready";
+        statusDiv.innerText = "Status: Ready to Host/Join";
     });
 
-    // HOST SIDE: New player joins
-    peer.on('connection', (conn) => {
+    // HOST SIDE: Handling multiple incoming connections
+    peer.on('connection', (newConn) => {
         if (connections.length >= 7) { 
-            conn.on('open', () => { conn.send({ type: 'LOBBY_FULL' }); setTimeout(() => conn.close(), 500); });
+            newConn.on('open', () => { 
+                newConn.send({ type: 'LOBBY_FULL' }); 
+                setTimeout(() => newConn.close(), 500); 
+            });
             return;
         }
 
-        connections.push(conn);
-        remotePlayers[conn.peer] = { 
+        isHost = true;
+        connections.push(newConn);
+        
+        // Add this specific player to our tracking object
+        remotePlayers[newConn.peer] = { 
             x: 50, y: 50, radius: 10, 
             color: colors[connections.length - 1],
             targetX: 50, targetY: 50 
@@ -53,35 +59,48 @@ window.onload = () => {
 
         statusDiv.innerText = `Players: ${connections.length + 1}/8`;
         
-        conn.on('data', (data) => {
-            if (data.type === 'POS') {
-                // Store as target for interpolation
-                remotePlayers[conn.peer].targetX = data.x;
-                remotePlayers[conn.peer].targetY = data.y;
+        // Listen for this specific player's movements
+        newConn.on('data', (data) => {
+            if (data.type === 'POS' && remotePlayers[newConn.peer]) {
+                remotePlayers[newConn.peer].targetX = data.x;
+                remotePlayers[newConn.peer].targetY = data.y;
             }
+        });
+
+        newConn.on('close', () => {
+            connections = connections.filter(c => c.peer !== newConn.peer);
+            delete remotePlayers[newConn.peer];
+            statusDiv.innerText = `Players: ${connections.length + 1}/8`;
         });
     });
 
-    // CLIENT SIDE: Joining
+    // CLIENT SIDE: Joining the host
     joinBtn.addEventListener('click', () => {
         myConn = peer.connect(remoteIdInput.value);
         isHost = false;
+        
+        myConn.on('open', () => {
+            statusDiv.innerText = "Status: Joined Lobby!";
+            gameRunning = true;
+            startBtn.style.display = 'none';
+        });
+
         myConn.on('data', (data) => {
-            if (data.type === 'LOBBY_FULL') alert("Lobby full!");
+            if (data.type === 'LOBBY_FULL') alert("Lobby is full!");
             if (data.type === 'SYNC') {
-                // Update targets for smooth sliding
+                // Sync Host Square
                 hostPlayer.targetX = data.host.x;
                 hostPlayer.targetY = data.host.y;
                 
-                // Sync remote players targets
+                // Sync all other Circle Chasers
                 for (let id in data.remotes) {
-                    if (!remotePlayers[id]) remotePlayers[id] = data.remotes[id];
+                    if (!remotePlayers[id]) {
+                        remotePlayers[id] = data.remotes[id];
+                    }
                     remotePlayers[id].targetX = data.remotes[id].x;
                     remotePlayers[id].targetY = data.remotes[id].y;
                     remotePlayers[id].color = data.remotes[id].color;
                 }
-                gameRunning = true;
-                startBtn.style.display = 'none';
             }
         });
     });
@@ -94,27 +113,28 @@ window.onload = () => {
         isHost = true;
         gameRunning = true;
         startBtn.style.display = 'none';
+        statusDiv.innerText = "Status: Hosting Game";
     });
 
     function update() {
         if (!gameRunning) return;
 
-        // 1. INPUT HANDLING
         if (isHost) {
-            if (keys['ArrowUp']) hostPlayer.y -= hostPlayer.speed;
-            if (keys['ArrowDown']) hostPlayer.y += hostPlayer.speed;
-            if (keys['ArrowLeft']) hostPlayer.x -= hostPlayer.speed;
-            if (keys['ArrowRight']) hostPlayer.x += hostPlayer.speed;
+            // Host moves Square
+            if (keys['ArrowUp']) hostPlayer.targetY -= hostPlayer.speed;
+            if (keys['ArrowDown']) hostPlayer.targetY += hostPlayer.speed;
+            if (keys['ArrowLeft']) hostPlayer.targetX -= hostPlayer.speed;
+            if (keys['ArrowRight']) hostPlayer.targetX += hostPlayer.speed;
             
-            // Host sends their REAL position to everyone
+            // Host broadcasts EVERYONE'S position to EVERYONE
             connections.forEach(c => {
                 if (c.open) c.send({ type: 'SYNC', host: hostPlayer, remotes: remotePlayers });
             });
             checkAllCollisions();
         } else {
+            // Client moves THEIR specific circle
             let me = remotePlayers[peer.id];
             if (me) {
-                // Use targetX/Y for local movement to keep it responsive
                 if (keys['ArrowUp']) me.targetY -= 5;
                 if (keys['ArrowDown']) me.targetY += 5;
                 if (keys['ArrowLeft']) me.targetX -= 5;
@@ -123,12 +143,10 @@ window.onload = () => {
             }
         }
 
-        // 2. INTERPOLATION (The Smoothing)
-        // Smooth the Host Square
+        // Interpolation (Smoothing all players)
         hostPlayer.x += (hostPlayer.targetX - hostPlayer.x) * lerpAmount;
         hostPlayer.y += (hostPlayer.targetY - hostPlayer.y) * lerpAmount;
 
-        // Smooth all Circle Chasers
         for (let id in remotePlayers) {
             let p = remotePlayers[id];
             p.x += (p.targetX - p.x) * lerpAmount;
@@ -150,16 +168,15 @@ window.onload = () => {
     }
 
     function draw() {
-        // --- TRAIL EFFECT ---
-        // Instead of clearRect, draw a semi-transparent rectangle over the whole screen
-        ctx.fillStyle = 'rgba(34, 34, 34, 0.2)'; // Adjust 0.2 (alpha) for longer/shorter trails
+        // Trail Effect
+        ctx.fillStyle = 'rgba(34, 34, 34, 0.3)'; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Square (Host)
+        // Draw Square
         ctx.fillStyle = hostPlayer.color;
         ctx.fillRect(hostPlayer.x, hostPlayer.y, hostPlayer.width, hostPlayer.height);
 
-        // Draw Circles (Remotes)
+        // Draw all Circles
         for (let id in remotePlayers) {
             let p = remotePlayers[id];
             ctx.fillStyle = p.color;
