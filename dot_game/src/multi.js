@@ -15,7 +15,7 @@
         let conn;
 
         function generateShortId(length = 5) {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars like O, 0, I, 1
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
             let result = '';
             for (let i = 0; i < length; i++) {
                 result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -23,12 +23,9 @@
             return result;
         }
 
-
         // --- NETWORKING ---
-        // Generate a 5-character ID first
         const myShortId = generateShortId(5);
 
-        // Pass it to the Peer constructor
         const peer = new Peer(myShortId, {
             host: '0.peerjs.com',
             port: 443,
@@ -39,10 +36,18 @@
         peer.on('open', (id) => {
             myIdDiv.innerText = "My ID: " + id;
             statusDiv.innerText = "Status: Ready to Host or Join";
-            conn = peer.connect(id);
         });
 
         peer.on('connection', (connection) => {
+            // REJECTION LOGIC: If a 2nd person tries to join an active game
+            if (conn && conn.open) {
+                connection.on('open', () => {
+                    connection.send({ type: 'LOBBY_FULL' });
+                    setTimeout(() => connection.close(), 500);
+                });
+                return;
+            }
+
             conn = connection;
             isHost = true;
             statusDiv.innerText = "Status: Connected! (You are HOST)";
@@ -50,12 +55,13 @@
         });
 
         peer.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-            alert("ID already taken, refreshing...");
-            location.reload(); // Simple way to try again with a new ID
+            if (err.type === 'unavailable-id') {
+                alert("ID already taken, refreshing...");
+                location.reload(); 
+            } else {
+                console.error("PeerJS Error:", err.type);
             }
         });
-
 
         joinBtn.addEventListener('click', () => {
             const remoteId = remoteIdInput.value;
@@ -71,7 +77,21 @@
                 statusDiv.innerText = "Status: Connected!";
                 gameRunning = true;
             });
+
             conn.on('data', (data) => {
+                // Handle Rejection
+                if (data.type === 'LOBBY_FULL') {
+                    statusDiv.innerText = "Status: Lobby Full!";
+                    conn.close();
+                    return;
+                }
+
+                // Handle Persistent Restart
+                if (data.type === 'RESTART') {
+                    resetPositions();
+                    return;
+                }
+
                 if (isHost) {
                     enemy.x = data.x;
                     enemy.y = data.y;
@@ -80,15 +100,25 @@
                     player.y = data.y;
                 }
             });
+
+            conn.on('close', () => {
+                statusDiv.innerText = "Status: Connection Closed";
+                gameRunning = false;
+            });
+        }
+
+        function resetPositions() {
+            player.x = 200; player.y = 200;
+            enemy.x = 50; enemy.y = 50;
+            gameRunning = true;
+            startBtn.style.display = 'none';
         }
 
         // --- COLLISION DETECTION ---
         function checkCollision() {
-            // Find the closest point on the square to the circle
             let closestX = Math.max(player.x, Math.min(enemy.x, player.x + player.width));
             let closestY = Math.max(player.y, Math.min(enemy.y, player.y + player.height));
 
-            // Calculate distance between closest point and circle center
             let distanceX = enemy.x - closestX;
             let distanceY = enemy.y - closestY;
             let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
@@ -104,61 +134,54 @@
         document.addEventListener('keydown', (e) => keys[e.key] = true);
         document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-// --- CONTROLS & START ---
-startBtn.addEventListener('click', () => {
-    // When you click Start, you are the Host by default
-    isHost = true; 
-    gameRunning = true;
-    startBtn.style.display = 'none';
-    statusDiv.innerText = "Status: Hosting... Waiting for someone to join.";
-});
+        startBtn.addEventListener('click', () => {
+            resetPositions();
+            if (!conn || !conn.open) {
+                isHost = true; // Default to host if solo
+                statusDiv.innerText = "Status: Hosting... Waiting for someone to join.";
+            } else {
+                // Tell the other player to restart their screen too
+                conn.send({ type: 'RESTART' });
+            }
+        });
 
-function update() {
-    if (!gameRunning) return;
+        function update() {
+            if (!gameRunning) return;
 
-    if (isHost) {
-        // HOST moves Square (WASD)
-        if (keys['ArrowUp']) player.y -= player.vy;
-        if (keys['ArrowDown']) player.y += player.vy;
-        if (keys['ArrowLeft']) player.x -= player.vx;
-        if (keys['ArrowRight']) player.x += player.vx;
-        
-        // ONLY send data if someone is actually connected
-        if (conn && conn.open) {
-            conn.send({ x: player.x, y: player.y });
+            if (isHost) {
+                if (keys['ArrowUp']) player.y -= player.vy;
+                if (keys['ArrowDown']) player.y += player.vy;
+                if (keys['ArrowLeft']) player.x -= player.vx;
+                if (keys['ArrowRight']) player.x += player.vx;
+                
+                if (conn && conn.open) {
+                    conn.send({ x: player.x, y: player.y });
+                }
+            } else {
+                if (keys['ArrowUp']) enemy.y -= enemy.vy;
+                if (keys['ArrowDown']) enemy.y += enemy.vy;
+                if (keys['ArrowLeft']) enemy.x -= enemy.vx;
+                if (keys['ArrowRight']) enemy.x += enemy.vx;
+                
+                if (conn && conn.open) {
+                    conn.send({ x: enemy.x, y: enemy.y });
+                }
+            }
+
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+            enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
+            enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
+
+            if (conn && conn.open) {
+                checkCollision();
+            }
         }
-    } else {
-        // CLIENT moves Circle (Arrows)
-        if (keys['ArrowUp']) enemy.y -= enemy.vy;
-        if (keys['ArrowDown']) enemy.y += enemy.vy;
-        if (keys['ArrowLeft']) enemy.x -= enemy.vx;
-        if (keys['ArrowRight']) enemy.x += enemy.vx;
-        
-        // Send position to Host
-        if (conn && conn.open) {
-            conn.send({ x: enemy.x, y: enemy.y });
-        }
-    }
-
-    // Keep players inside the box
-    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-    enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
-    enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
-
-    // Only check collision if both players are "real" (connected)
-    if (conn && conn.open) {
-        checkCollision();
-    }
-}
-
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             ctx.fillStyle = '#45ff01';
             ctx.fillRect(player.x, player.y, player.width, player.height);
-            
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
             ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
@@ -175,3 +198,4 @@ function update() {
         }
 
         gameLoop();
+
