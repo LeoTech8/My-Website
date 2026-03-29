@@ -7,6 +7,18 @@ const joinBtn = document.getElementById('joinBtn');
 const remoteIdInput = document.getElementById('remoteIdInput');
 const startBtn = document.getElementById('startBtn');
 
+// --- DEVICE DETECTION (NEW) ---
+function isTouchDevice() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+}
+const isMobile = isTouchDevice();
+
+// --- JOYSTICK AUTO TOGGLE (NEW) ---
+const joystick = document.getElementById('joystickContainer');
+if (joystick) {
+    joystick.style.display = isMobile ? 'block' : 'none';
+}
+
 // --- GAME STATE ---
 let player = { x: 200, y: 200, width: 20, height: 20, speed: 6 };
 let enemy = { x: 50, y: 50, radius: 10, speed: 7 };
@@ -89,7 +101,7 @@ function setupDataListener() {
         gameRunning = true;
         startBtn.style.display = 'none';
 
-        // ✅ INIT SYNC
+        // INIT SYNC
         conn.send({
             type: 'INIT',
             player: player
@@ -98,7 +110,6 @@ function setupDataListener() {
 
     conn.on('data', (data) => {
         if (!data || !data.type) {
-            // INPUT PACKET
             remoteKeys = data || remoteKeys;
             return;
         }
@@ -114,7 +125,6 @@ function setupDataListener() {
             return;
         }
 
-        // ✅ INITIAL SYNC
         if (data.type === 'INIT') {
             if (isHost) {
                 enemy.x = data.player.x;
@@ -141,9 +151,11 @@ function resetPositions() {
     startBtn.style.display = 'none';
 }
 
-// --- INPUT ---
-document.addEventListener('keydown', (e) => keys[e.key] = true);
-document.addEventListener('keyup', (e) => keys[e.key] = false);
+// --- INPUT (UPDATED: mobile-safe) ---
+if (!isMobile) {
+    document.addEventListener('keydown', (e) => keys[e.key] = true);
+    document.addEventListener('keyup', (e) => keys[e.key] = false);
+}
 
 // --- START BUTTON ---
 startBtn.addEventListener('click', () => {
