@@ -1,339 +1,300 @@
 window.onload = () => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('status');
+    const myIdDiv = document.getElementById('myIdDisplay');
+    const joinBtn = document.getElementById('joinBtn');
+    const remoteIdInput = document.getElementById('remoteIdInput');
+    const startBtn = document.getElementById('startBtn');
 
-// ================= DEBUG SYSTEM =================
-const DEBUG = true;
+    const menu = document.querySelector(".menu");
 
-function log(...args) {
-    if (DEBUG) console.log("[DEBUG]", ...args);
-}
-function logNet(...args) {
-    if (DEBUG) console.log("[NET]", ...args);
-}
-function logInput(...args) {
-    if (DEBUG) console.log("[INPUT]", ...args);
-}
-function logGame(...args) {
-    if (DEBUG) console.log("[GAME]", ...args);
-}
-function logWarn(...args) {
-    if (DEBUG) console.warn("[WARN]", ...args);
-}
-function logError(...args) {
-    console.error("[ERROR]", ...args);
-}
-
-// ================= CANVAS =================
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    log("Canvas resized:", canvas.width, canvas.height);
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// ================= UI =================
-const statusDiv = document.getElementById('status');
-const myIdDiv = document.getElementById('myIdDisplay');
-const joinBtn = document.getElementById('joinBtn');
-const remoteIdInput = document.getElementById('remoteIdInput');
-const startBtn = document.getElementById('startBtn');
-
-// ================= DEVICE =================
-function isTouchDevice() {
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-}
-const isMobile = isTouchDevice();
-log("Device type:", isMobile ? "Mobile" : "PC");
-
-// ================= JOYSTICK =================
-const joystick = document.getElementById('joystickContainer');
-const stick = document.getElementById('joystickStick');
-
-if (joystick) {
-    joystick.style.display = isMobile ? 'block' : 'none';
-    log("Joystick visibility:", joystick.style.display);
-}
-
-// ================= GAME STATE =================
-let player = { x: 200, y: 200, width: 20, height: 20, speed: 6 };
-let enemy = { x: 50, y: 50, radius: 10, speed: 7 };
-
-let keys = {};
-let remoteKeys = { up: false, down: false, left: false, right: false };
-
-let gameRunning = false;
-let isHost = false;
-let conn;
-
-// ================= NETWORK =================
-let lastSend = 0;
-const SEND_RATE = 1000 / 30;
-
-// ================= ID =================
-function generateShortId(length = 6) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-}
-
-const peer = new Peer(generateShortId(), {
-    host: '0.peerjs.com',
-    port: 443,
-    secure: true,
-    debug: 2
-});
-
-peer.on('open', (id) => {
-    logNet("Peer opened:", id);
-    myIdDiv.innerText = "My ID: " + id;
-    statusDiv.innerText = "Status: Ready";
-});
-
-peer.on('connection', (connection) => {
-    logNet("Incoming connection");
-
-    conn = connection;
-    isHost = true;
-
-    logNet("Role set: HOST");
-
-    statusDiv.innerText = "Status: Connected (HOST)";
-    setupDataListener();
-});
-
-peer.on('error', (err) => {
-    logError("Peer error:", err);
-
-    if (err.type === 'unavailable-id') {
-        alert("ID already taken. Reloading...");
-        location.reload();
-    }
-});
-
-// ================= JOIN =================
-joinBtn.addEventListener('click', () => {
-    const remoteId = remoteIdInput.value;
-
-    if (!remoteId) {
-        logWarn("No remote ID entered");
-        return alert("Enter an ID!");
+    // ---------- FULLSCREEN ----------
+    function enterFullscreen() {
+        const elem = canvas;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
     }
 
-    logNet("Connecting to:", remoteId);
+    function exitFullscreen() {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
 
-    conn = peer.connect(remoteId);
-    isHost = false;
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
 
-    logNet("Role set: CLIENT");
+    window.addEventListener('resize', resize);
+    document.addEventListener("fullscreenchange", resize);
+    document.addEventListener("webkitfullscreenchange", resize);
+    document.addEventListener("msfullscreenchange", resize);
 
-    statusDiv.innerText = "Status: Connecting...";
-    setupDataListener();
-});
+    resize();
 
-// ================= CONNECTION =================
-function setupDataListener() {
-    conn.on('open', () => {
-        logNet("Connection established");
+    // ---------- GAME STATE ----------
+    let isHost = false;
+    let gameRunning = false;
 
-        statusDiv.innerText = "Status: Connected!";
-        gameRunning = true;
-        startBtn.style.display = 'none';
+    let keys = {};
+    const lerpAmount = 0.12;
 
-        const initPacket = { type: 'INIT', player };
-        conn.send(initPacket);
+    const MAX_SPEED = 6;
+    const ACCEL = 0.6;
+    const FRICTION = 0.92;
 
-        logNet("Sent INIT:", initPacket);
+    let hostPlayer = {
+        x: 200, y: 200,
+        vx: 0, vy: 0,
+        size: 20,
+        color: '#45ff01',
+        targetX: 200,
+        targetY: 200
+    };
+
+    let me = {
+        x: 400, y: 300,
+        vx: 0, vy: 0,
+        radius: 10,
+        color: '#ffffff',
+        targetX: 400,
+        targetY: 300
+    };
+
+    let remotePlayers = {};
+    let connections = [];
+    let myConn;
+
+    const colors = ['#ff0000', '#0099ff', '#ff00ff', '#ffff00', '#ff9900', '#00ffff'];
+
+    // ---------- PEER ----------
+    const peer = new Peer(Math.random().toString(36).substring(2,7).toUpperCase(), {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true
     });
 
-    conn.on('data', (data) => {
-        logNet("Received:", data);
+    peer.on('open', id => {
+        myIdDiv.innerText = "My ID: " + id;
+        statusDiv.innerText = "Ready";
+    });
 
-        if (!data) return;
-
-        if (!data.type) {
-            remoteKeys = data;
-            logInput("Remote keys:", remoteKeys);
+    // ---------- HOST ----------
+    peer.on('connection', conn => {
+        if (connections.length >= 1) {
+            conn.close();
             return;
         }
 
-        logNet("Packet type:", data.type);
+        isHost = true;
+        connections.push(conn);
 
-        if (data.type === 'INIT') {
-            if (isHost) {
-                enemy.x = data.player.x;
-                enemy.y = data.player.y;
-            } else {
-                player.x = data.player.x;
-                player.y = data.player.y;
-            }
-        }
-    });
-
-    conn.on('close', () => {
-        logWarn("Connection closed");
-        statusDiv.innerText = "Status: Disconnected";
-        gameRunning = false;
-    });
-}
-
-// ================= INPUT =================
-if (!isMobile) {
-    document.addEventListener('keydown', (e) => {
-        keys[e.key] = true;
-        logInput("Key down:", e.key);
-    });
-
-    document.addEventListener('keyup', (e) => {
-        keys[e.key] = false;
-        logInput("Key up:", e.key);
-    });
-}
-
-// ================= JOYSTICK INPUT =================
-let joystickActive = false;
-let center = { x: 60, y: 60 };
-
-if (stick) {
-    stick.addEventListener('touchstart', () => {
-        joystickActive = true;
-        logInput("Joystick touch start");
-    });
-
-    document.addEventListener('touchend', () => {
-        joystickActive = false;
-
-        stick.style.left = "35px";
-        stick.style.top = "35px";
-
-        keys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
-
-        logInput("Joystick released");
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!joystickActive) return;
-
-        let touch = e.touches[0];
-        let rect = joystick.getBoundingClientRect();
-
-        let dx = touch.clientX - rect.left - center.x;
-        let dy = touch.clientY - rect.top - center.y;
-
-        let distance = Math.min(40, Math.hypot(dx, dy));
-        let angle = Math.atan2(dy, dx);
-
-        let x = Math.cos(angle) * distance;
-        let y = Math.sin(angle) * distance;
-
-        stick.style.left = (center.x + x - 25) + "px";
-        stick.style.top = (center.y + y - 25) + "px";
-
-        keys['ArrowUp'] = y < -10;
-        keys['ArrowDown'] = y > 10;
-        keys['ArrowLeft'] = x < -10;
-        keys['ArrowRight'] = x > 10;
-
-        logInput("Joystick moved:", { x, y });
-    });
-}
-
-// ================= START =================
-startBtn.addEventListener('click', () => {
-    logGame("Start button clicked");
-
-    player.x = 200;
-    player.y = 200;
-    enemy.x = 50;
-    enemy.y = 50;
-
-    gameRunning = true;
-
-    if (conn && conn.open) {
-        conn.send({ type: 'RESTART' });
-        logNet("Sent RESTART");
-    }
-});
-
-// ================= COLLISION =================
-function checkCollision() {
-    let closestX = Math.max(player.x, Math.min(enemy.x, player.x + player.width));
-    let closestY = Math.max(player.y, Math.min(enemy.y, player.y + player.height));
-    let dx = enemy.x - closestX;
-    let dy = enemy.y - closestY;
-
-    if ((dx * dx + dy * dy) < (enemy.radius * enemy.radius)) {
-        logGame("Collision detected");
-
-        gameRunning = false;
-        startBtn.style.display = 'block';
-        startBtn.innerText = "Collision! Restart?";
-    }
-}
-
-// ================= UPDATE =================
-function update() {
-    if (!gameRunning) return;
-
-    if (isHost) {
-        if (keys['ArrowUp']) player.y -= player.speed;
-        if (keys['ArrowDown']) player.y += player.speed;
-        if (keys['ArrowLeft']) player.x -= player.speed;
-        if (keys['ArrowRight']) player.x += player.speed;
-    } else {
-        if (keys['ArrowUp']) enemy.y -= enemy.speed;
-        if (keys['ArrowDown']) enemy.y += enemy.speed;
-        if (keys['ArrowLeft']) enemy.x -= enemy.speed;
-        if (keys['ArrowRight']) enemy.x += enemy.speed;
-    }
-
-    if (conn && conn.open) {
-        const packet = {
-            up: keys['ArrowUp'],
-            down: keys['ArrowDown'],
-            left: keys['ArrowLeft'],
-            right: keys['ArrowRight']
+        remotePlayers[conn.peer] = {
+            x: 100, y: 100,
+            vx: 0, vy: 0,
+            radius: 10,
+            color: colors[0],
+            targetX: 100,
+            targetY: 100
         };
 
-        conn.send(packet);
-        logNet("Sent input:", packet);
+        conn.on('data', data => {
+            if (data.type === 'POS') {
+                let p = remotePlayers[conn.peer];
+                if (p) {
+                    p.targetX = data.x;
+                    p.targetY = data.y;
+                }
+            }
+        });
+
+        conn.on('close', () => {
+            connections = connections.filter(c => c.peer !== conn.peer);
+            delete remotePlayers[conn.peer];
+        });
+
+        statusDiv.innerText = "Client connected";
+    });
+
+    // ---------- JOIN ----------
+    joinBtn.onclick = () => {
+        myConn = peer.connect(remoteIdInput.value);
+
+        myConn.on('open', () => {
+            statusDiv.innerText = "Connected";
+            gameRunning = true;
+
+            // UI transition
+            menu.style.display = "none";
+            canvas.style.display = "block";
+
+            enterFullscreen();
+        });
+
+        myConn.on('data', data => {
+            if (data.type === 'SYNC') {
+                hostPlayer.targetX = data.host.x;
+                hostPlayer.targetY = data.host.y;
+
+                if (data.me) {
+                    me.targetX = data.me.x;
+                    me.targetY = data.me.y;
+                }
+            }
+        });
+    };
+
+    // ---------- START HOST ----------
+    startBtn.onclick = () => {
+        isHost = true;
+        gameRunning = true;
+
+        startBtn.style.display = 'none';
+        statusDiv.innerText = "Hosting";
+
+        menu.style.display = "none";
+        canvas.style.display = "block";
+
+        enterFullscreen();
+    };
+
+    // ---------- INPUT ----------
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
+
+    // ---------- PHYSICS ----------
+    function applyPhysics(p, isSquare = false) {
+        if (keys['ArrowUp']) p.vy -= ACCEL;
+        if (keys['ArrowDown']) p.vy += ACCEL;
+        if (keys['ArrowLeft']) p.vx -= ACCEL;
+        if (keys['ArrowRight']) p.vx += ACCEL;
+
+        p.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vx));
+        p.vy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, p.vy));
+
+        p.vx *= FRICTION;
+        p.vy *= FRICTION;
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        const size = isSquare ? p.size : p.radius * 2;
+
+        // Wall bounce
+        if (p.x < 0) { p.x = 0; p.vx *= -1; }
+        if (p.y < 0) { p.y = 0; p.vy *= -1; }
+        if (p.x > canvas.width - size) { p.x = canvas.width - size; p.vx *= -1; }
+        if (p.y > canvas.height - size) { p.y = canvas.height - size; p.vy *= -1; }
     }
 
-    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-    enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
-    enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
+    // ---------- UPDATE ----------
+    function update() {
+        if (!gameRunning) return;
 
-    if (conn && conn.open) checkCollision();
-}
+        if (isHost) {
+            applyPhysics(hostPlayer, true);
 
-// ================= DRAW =================
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let id in remotePlayers) {
+                let p = remotePlayers[id];
 
-    ctx.fillStyle = 'lime';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+                p.vx *= FRICTION;
+                p.vy *= FRICTION;
 
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.fill();
-}
+                p.x += p.vx;
+                p.y += p.vy;
 
-// ================= LOOP =================
-function loop() {
-    update();
-    draw();
+                if (p.x < 0) { p.x = 0; p.vx *= -1; }
+                if (p.y < 0) { p.y = 0; p.vy *= -1; }
+                if (p.x > canvas.width - p.radius * 2) { p.x = canvas.width - p.radius * 2; p.vx *= -1; }
+                if (p.y > canvas.height - p.radius * 2) { p.y = canvas.height - p.radius * 2; p.vy *= -1; }
+            }
 
-    requestAnimationFrame(loop);
-}
+            // collision
+            for (let id in remotePlayers) {
+                let p = remotePlayers[id];
+                let dx = p.x - hostPlayer.x;
+                let dy = p.y - hostPlayer.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
 
-logGame("Game loop started");
-loop();
+                if (dist < 20) {
+                    statusDiv.innerText = "Caught!";
+                    gameRunning = false;
+                    exitFullscreen();
+                }
+            }
 
+            connections.forEach(c => {
+                c.send({
+                    type: 'SYNC',
+                    host: hostPlayer,
+                    remotes: remotePlayers
+                });
+            });
+
+        } else {
+            if (keys['ArrowUp']) me.vy -= ACCEL;
+            if (keys['ArrowDown']) me.vy += ACCEL;
+            if (keys['ArrowLeft']) me.vx -= ACCEL;
+            if (keys['ArrowRight']) me.vx += ACCEL;
+
+            me.vx *= FRICTION;
+            me.vy *= FRICTION;
+
+            me.x += me.vx;
+            me.y += me.vy;
+
+            // bounce
+            if (me.x < 0) { me.x = 0; me.vx *= -1; }
+            if (me.y < 0) { me.y = 0; me.vy *= -1; }
+            if (me.x > canvas.width - me.radius * 2) { me.x = canvas.width - me.radius * 2; me.vx *= -1; }
+            if (me.y > canvas.height - me.radius * 2) { me.y = canvas.height - me.radius * 2; me.vy *= -1; }
+
+            if (myConn && myConn.open) {
+                myConn.send({ type: 'POS', x: me.x, y: me.y });
+            }
+        }
+
+        // interpolation
+        hostPlayer.x += (hostPlayer.targetX - hostPlayer.x) * lerpAmount;
+        hostPlayer.y += (hostPlayer.targetY - hostPlayer.y) * lerpAmount;
+
+        me.x += (me.targetX - me.x) * lerpAmount;
+        me.y += (me.targetY - me.y) * lerpAmount;
+    }
+
+    // ---------- DRAW ----------
+    function draw() {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // host square
+        ctx.fillStyle = hostPlayer.color;
+        ctx.fillRect(hostPlayer.x, hostPlayer.y, hostPlayer.size, hostPlayer.size);
+
+        // client self
+        ctx.beginPath();
+        ctx.fillStyle = me.color;
+        ctx.arc(me.x, me.y, me.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // remote players
+        for (let id in remotePlayers) {
+            let p = remotePlayers[id];
+            ctx.beginPath();
+            ctx.fillStyle = p.color;
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
 };
