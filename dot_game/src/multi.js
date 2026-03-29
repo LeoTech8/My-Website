@@ -1,25 +1,63 @@
 window.onload = () => {
+
+// ================= DEBUG SYSTEM =================
+const DEBUG = true;
+
+function log(...args) {
+    if (DEBUG) console.log("[DEBUG]", ...args);
+}
+function logNet(...args) {
+    if (DEBUG) console.log("[NET]", ...args);
+}
+function logInput(...args) {
+    if (DEBUG) console.log("[INPUT]", ...args);
+}
+function logGame(...args) {
+    if (DEBUG) console.log("[GAME]", ...args);
+}
+function logWarn(...args) {
+    if (DEBUG) console.warn("[WARN]", ...args);
+}
+function logError(...args) {
+    console.error("[ERROR]", ...args);
+}
+
+// ================= CANVAS =================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    log("Canvas resized:", canvas.width, canvas.height);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ================= UI =================
 const statusDiv = document.getElementById('status');
 const myIdDiv = document.getElementById('myIdDisplay');
 const joinBtn = document.getElementById('joinBtn');
 const remoteIdInput = document.getElementById('remoteIdInput');
 const startBtn = document.getElementById('startBtn');
 
-// --- DEVICE DETECTION (NEW) ---
+// ================= DEVICE =================
 function isTouchDevice() {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 }
 const isMobile = isTouchDevice();
+log("Device type:", isMobile ? "Mobile" : "PC");
 
-// --- JOYSTICK AUTO TOGGLE (NEW) ---
+// ================= JOYSTICK =================
 const joystick = document.getElementById('joystickContainer');
+const stick = document.getElementById('joystickStick');
+
 if (joystick) {
     joystick.style.display = isMobile ? 'block' : 'none';
+    log("Joystick visibility:", joystick.style.display);
 }
 
-// --- GAME STATE ---
+// ================= GAME STATE =================
 let player = { x: 200, y: 200, width: 20, height: 20, speed: 6 };
 let enemy = { x: 50, y: 50, radius: 10, speed: 7 };
 
@@ -30,11 +68,11 @@ let gameRunning = false;
 let isHost = false;
 let conn;
 
-// --- NETWORK TIMING ---
+// ================= NETWORK =================
 let lastSend = 0;
 const SEND_RATE = 1000 / 30;
 
-// --- ID ---
+// ================= ID =================
 function generateShortId(length = 6) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
@@ -44,9 +82,7 @@ function generateShortId(length = 6) {
     return result;
 }
 
-const myShortId = generateShortId();
-
-const peer = new Peer(myShortId, {
+const peer = new Peer(generateShortId(), {
     host: '0.peerjs.com',
     port: 443,
     secure: true,
@@ -54,76 +90,79 @@ const peer = new Peer(myShortId, {
 });
 
 peer.on('open', (id) => {
+    logNet("Peer opened:", id);
     myIdDiv.innerText = "My ID: " + id;
-    statusDiv.innerText = "Status: Ready to Host or Join";
+    statusDiv.innerText = "Status: Ready";
 });
 
 peer.on('connection', (connection) => {
-    if (conn && conn.open) {
-        connection.on('open', () => {
-            connection.send({ type: 'LOBBY_FULL' });
-            setTimeout(() => connection.close(), 500);
-        });
-        return;
-    }
+    logNet("Incoming connection");
 
     conn = connection;
     isHost = true;
 
-    statusDiv.innerText = "Status: Connected! (You are HOST)";
+    logNet("Role set: HOST");
+
+    statusDiv.innerText = "Status: Connected (HOST)";
     setupDataListener();
 });
 
 peer.on('error', (err) => {
-    console.error(err);
+    logError("Peer error:", err);
+
     if (err.type === 'unavailable-id') {
-        alert("ID already taken. Refreshing...");
+        alert("ID already taken. Reloading...");
         location.reload();
     }
 });
 
-// --- JOIN ---
+// ================= JOIN =================
 joinBtn.addEventListener('click', () => {
     const remoteId = remoteIdInput.value;
-    if (!remoteId) return alert("Enter an ID!");
+
+    if (!remoteId) {
+        logWarn("No remote ID entered");
+        return alert("Enter an ID!");
+    }
+
+    logNet("Connecting to:", remoteId);
 
     conn = peer.connect(remoteId);
     isHost = false;
+
+    logNet("Role set: CLIENT");
 
     statusDiv.innerText = "Status: Connecting...";
     setupDataListener();
 });
 
-// --- CONNECTION HANDLER ---
+// ================= CONNECTION =================
 function setupDataListener() {
     conn.on('open', () => {
+        logNet("Connection established");
+
         statusDiv.innerText = "Status: Connected!";
         gameRunning = true;
         startBtn.style.display = 'none';
 
-        // INIT SYNC
-        conn.send({
-            type: 'INIT',
-            player: player
-        });
+        const initPacket = { type: 'INIT', player };
+        conn.send(initPacket);
+
+        logNet("Sent INIT:", initPacket);
     });
 
     conn.on('data', (data) => {
-        if (!data || !data.type) {
-            remoteKeys = data || remoteKeys;
+        logNet("Received:", data);
+
+        if (!data) return;
+
+        if (!data.type) {
+            remoteKeys = data;
+            logInput("Remote keys:", remoteKeys);
             return;
         }
 
-        if (data.type === 'LOBBY_FULL') {
-            statusDiv.innerText = "Status: Lobby Full!";
-            conn.close();
-            return;
-        }
-
-        if (data.type === 'RESTART') {
-            resetPositions();
-            return;
-        }
+        logNet("Packet type:", data.type);
 
         if (data.type === 'INIT') {
             if (isHost) {
@@ -133,43 +172,95 @@ function setupDataListener() {
                 player.x = data.player.x;
                 player.y = data.player.y;
             }
-            return;
         }
     });
 
     conn.on('close', () => {
-        statusDiv.innerText = "Status: Connection Closed";
+        logWarn("Connection closed");
+        statusDiv.innerText = "Status: Disconnected";
         gameRunning = false;
     });
 }
 
-// --- RESET ---
-function resetPositions() {
-    player.x = 200; player.y = 200;
-    enemy.x = 50; enemy.y = 50;
-    gameRunning = true;
-    startBtn.style.display = 'none';
-}
-
-// --- INPUT (UPDATED: mobile-safe) ---
+// ================= INPUT =================
 if (!isMobile) {
-    document.addEventListener('keydown', (e) => keys[e.key] = true);
-    document.addEventListener('keyup', (e) => keys[e.key] = false);
+    document.addEventListener('keydown', (e) => {
+        keys[e.key] = true;
+        logInput("Key down:", e.key);
+    });
+
+    document.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+        logInput("Key up:", e.key);
+    });
 }
 
-// --- START BUTTON ---
+// ================= JOYSTICK INPUT =================
+let joystickActive = false;
+let center = { x: 60, y: 60 };
+
+if (stick) {
+    stick.addEventListener('touchstart', () => {
+        joystickActive = true;
+        logInput("Joystick touch start");
+    });
+
+    document.addEventListener('touchend', () => {
+        joystickActive = false;
+
+        stick.style.left = "35px";
+        stick.style.top = "35px";
+
+        keys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
+
+        logInput("Joystick released");
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+
+        let touch = e.touches[0];
+        let rect = joystick.getBoundingClientRect();
+
+        let dx = touch.clientX - rect.left - center.x;
+        let dy = touch.clientY - rect.top - center.y;
+
+        let distance = Math.min(40, Math.hypot(dx, dy));
+        let angle = Math.atan2(dy, dx);
+
+        let x = Math.cos(angle) * distance;
+        let y = Math.sin(angle) * distance;
+
+        stick.style.left = (center.x + x - 25) + "px";
+        stick.style.top = (center.y + y - 25) + "px";
+
+        keys['ArrowUp'] = y < -10;
+        keys['ArrowDown'] = y > 10;
+        keys['ArrowLeft'] = x < -10;
+        keys['ArrowRight'] = x > 10;
+
+        logInput("Joystick moved:", { x, y });
+    });
+}
+
+// ================= START =================
 startBtn.addEventListener('click', () => {
-    resetPositions();
+    logGame("Start button clicked");
+
+    player.x = 200;
+    player.y = 200;
+    enemy.x = 50;
+    enemy.y = 50;
+
+    gameRunning = true;
 
     if (conn && conn.open) {
         conn.send({ type: 'RESTART' });
-    } else {
-        isHost = true;
-        statusDiv.innerText = "Status: Hosting...";
+        logNet("Sent RESTART");
     }
 });
 
-// --- COLLISION ---
+// ================= COLLISION =================
 function checkCollision() {
     let closestX = Math.max(player.x, Math.min(enemy.x, player.x + player.width));
     let closestY = Math.max(player.y, Math.min(enemy.y, player.y + player.height));
@@ -177,17 +268,18 @@ function checkCollision() {
     let dy = enemy.y - closestY;
 
     if ((dx * dx + dy * dy) < (enemy.radius * enemy.radius)) {
+        logGame("Collision detected");
+
         gameRunning = false;
         startBtn.style.display = 'block';
         startBtn.innerText = "Collision! Restart?";
     }
 }
 
-// --- UPDATE ---
+// ================= UPDATE =================
 function update() {
     if (!gameRunning) return;
 
-    // LOCAL CONTROL
     if (isHost) {
         if (keys['ArrowUp']) player.y -= player.speed;
         if (keys['ArrowDown']) player.y += player.speed;
@@ -200,33 +292,18 @@ function update() {
         if (keys['ArrowRight']) enemy.x += enemy.speed;
     }
 
-    // REMOTE CONTROL
-    if (isHost) {
-        if (remoteKeys.up) enemy.y -= enemy.speed;
-        if (remoteKeys.down) enemy.y += enemy.speed;
-        if (remoteKeys.left) enemy.x -= enemy.speed;
-        if (remoteKeys.right) enemy.x += enemy.speed;
-    } else {
-        if (remoteKeys.up) player.y -= player.speed;
-        if (remoteKeys.down) player.y += player.speed;
-        if (remoteKeys.left) player.x -= player.speed;
-        if (remoteKeys.right) player.x += player.speed;
-    }
-
-    // SEND INPUT
-    const now = Date.now();
-    if (conn && conn.open && now - lastSend > SEND_RATE) {
-        lastSend = now;
-
-        conn.send({
+    if (conn && conn.open) {
+        const packet = {
             up: keys['ArrowUp'],
             down: keys['ArrowDown'],
             left: keys['ArrowLeft'],
             right: keys['ArrowRight']
-        });
+        };
+
+        conn.send(packet);
+        logNet("Sent input:", packet);
     }
 
-    // BOUNDS
     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
@@ -235,26 +312,28 @@ function update() {
     if (conn && conn.open) checkCollision();
 }
 
-// --- DRAW ---
+// ================= DRAW =================
 function draw() {
-    ctx.fillStyle = 'rgba(34, 34, 34, 0.3)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#45ff01';
+    ctx.fillStyle = 'lime';
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
-    ctx.fillStyle = '#ff0000';
+    ctx.fillStyle = 'red';
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
     ctx.fill();
 }
 
-// --- LOOP ---
-function gameLoop() {
-    if (gameRunning) update();
+// ================= LOOP =================
+function loop() {
+    update();
     draw();
-    requestAnimationFrame(gameLoop);
+
+    requestAnimationFrame(loop);
 }
 
-gameLoop();
+logGame("Game loop started");
+loop();
+
 };
