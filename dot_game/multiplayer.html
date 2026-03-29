@@ -1,91 +1,355 @@
 <!DOCTYPE html>
-<html lang="en-AU">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>P2P Multiplayer Game</title>
-    <style>
-        body { 
-            background: #222; 
-            color: white; 
-            font-family: sans-serif; 
-            text-align: center; 
-        }
-        canvas { 
-            background: #000; 
-            border: 2px solid #444; 
-            display: block; 
-            margin: 10px auto; 
-        }
-        /* Menu box for connection settings */
-        .menu { 
-            background: #333; 
-            padding: 15px; 
-            border-radius: 8px; 
-            display: inline-block; 
-            margin-top: 10px; 
-        }
-        input { 
-            padding: 8px; 
-            border-radius: 4px; 
-            border: none; 
-            outline: none;
-        }
-        button { 
-            padding: 8px 15px; 
-            cursor: pointer; 
-            background: #45ff01; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #32ba00;
-        }
-        #status { 
-            color: #ffcc00; 
-            margin: 5px; 
-            font-weight: bold;
-        }
-        #myIdDisplay {
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            color: #45ff01;
-            margin-bottom: 10px;
-        }
-    </style>
-    
-    <!-- Load PeerJS Library first -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js" defer></script>
-    
-    <!-- Load your Game Logic (Make sure the path is correct!) -->
-    <script src="src/multi.js" defer></script>
+  <meta charset="UTF-8" />
+  <title>Multiplayer Lobby</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; background: #111; color: #fff; }
+    .screen { display: none; padding: 20px; }
+    .active { display: block; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    input { padding: 10px; margin: 5px; }
+    #gameCanvas { background: #222; display: none; }
+    ul { list-style: none; padding: 0; }
+    #endScreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Square Chaser Multiplayer</h1>
-
-    <div class="menu">
-        <div id="status">Status: Waiting for PeerJS...</div>
-        <div id="myIdDisplay">My ID: ---</div>
-        
-        <input type="text" id="remoteIdInput" placeholder="Paste Friend's ID here">
-        <button id="joinBtn">Join Lobby</button>
-        <button id="startBtn">Start Game</button>
-    </div>
-
-    <!-- The Game Canvas -->
-    <canvas id="gameCanvas" width="1350" height="650">
-        Your browser is too old to play this game!
-    </canvas>
-
-    
-<!-- JOYSTICK -->
-<div id="joystickContainer">
-    <div id="joystickBase">
-        <div id="joystickStick"></div>
-    </div>
+<div id="menuScreen" class="screen active">
+  <h1>Multiplayer Game</h1>
+  <button onclick="hostGame()">Host Game</button>
+  <button onclick="showJoin()">Join Game</button>
 </div>
 
+<div id="joinScreen" class="screen">
+  <h2>Join Game</h2>
+  <input id="joinCode" placeholder="Enter room code" />
+  <button onclick="joinGame()">Join</button>
+  <button onclick="backToMenu()">Back</button>
+</div>
+
+<div id="lobbyScreen" class="screen">
+  <h2>Lobby</h2>
+  <p>Room Code: <span id="roomCodeDisplay"></span></p>
+  <ul id="playerList"></ul>
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="closeLobby()">Close Lobby</button>
+</div>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<div id="endScreen">
+  <h1 id="endMessage"></h1>
+  <button onclick="restartGame()">Restart Game</button>
+  <button onclick="leaveLobby()">Leave Lobby</button>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+let peer;
+let isHost = false;
+
+let connections = [];
+let players = {};
+let serverPlayers = {};
+let renderPlayers = {};
+
+let hostObject = { x: 400, y: 300 };
+
+const colors = ["red","blue","green","yellow","purple","orange"];
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const endScreen = document.getElementById('endScreen');
+
+function log(msg) {
+  console.log("[DEBUG] " + msg);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function showScreen(screen) {
+  document.getElementById('menuScreen').classList.remove('active');
+  document.getElementById('joinScreen').classList.remove('active');
+  document.getElementById('lobbyScreen').classList.remove('active');
+  screen.classList.add('active');
+  log("Switched screen");
+}
+
+function backToMenu() { showScreen(document.getElementById('menuScreen')); }
+function showJoin() { showScreen(document.getElementById('joinScreen')); }
+
+// HOST
+function hostGame() {
+  log("Hosting game...");
+  isHost = true;
+  peer = new Peer();
+
+  peer.on('open', id => {
+    log("Host ID: " + id);
+    document.getElementById('roomCodeDisplay').innerText = id;
+    showScreen(document.getElementById('lobbyScreen'));
+
+    players[id] = { id, x: 200, y: 200, color: colors[0] };
+    renderPlayers[id] = { ...players[id] };
+  });
+
+  peer.on('connection', conn => {
+    log("Player connected: " + conn.peer);
+    connections.push(conn);
+
+    conn.on('data', data => handleHostMessage(conn, data));
+
+    conn.on('close', () => {
+      log("Player disconnected: " + conn.peer);
+      connections = connections.filter(c => c !== conn);
+      delete players[conn.peer];
+      broadcastPlayerList();
+      updatePlayerList();
+    });
+  });
+
+  window.addEventListener('keydown', e => {
+    if (!isHost) return;
+
+    if (e.key === 'ArrowUp') hostObject.y -= 10;
+    if (e.key === 'ArrowDown') hostObject.y += 10;
+    if (e.key === 'ArrowLeft') hostObject.x -= 10;
+    if (e.key === 'ArrowRight') hostObject.x += 10;
+
+    broadcastGameState();
+  });
+}
+
+// JOIN
+function joinGame() {
+  const code = document.getElementById('joinCode').value;
+  log("Joining room: " + code);
+  peer = new Peer();
+
+  peer.on('open', () => {
+    const conn = peer.connect(code);
+
+    conn.on('open', () => {
+      log("Connected to host");
+      window.conn = conn;
+      conn.send({ type: "join" });
+      showScreen(document.getElementById('lobbyScreen'));
+    });
+
+    conn.on('data', handleClientMessage);
+  });
+}
+
+// HOST MESSAGE
+function handleHostMessage(conn, data) {
+  if (data.type === "join") {
+    log("Handling join from " + conn.peer);
+
+    const color = colors[Object.keys(players).length % colors.length];
+
+    players[conn.peer] = {
+      id: conn.peer,
+      x: Math.random()*400+100,
+      y: Math.random()*400+100,
+      color
+    };
+
+    renderPlayers[conn.peer] = { ...players[conn.peer] };
+
+    updatePlayerList();
+    broadcastPlayerList();
+  }
+
+  if (data.type === "input") {
+    let p = players[conn.peer];
+    if (!p) return;
+
+    if (data.key === "ArrowUp") p.y -= 5;
+    if (data.key === "ArrowDown") p.y += 5;
+    if (data.key === "ArrowLeft") p.x -= 5;
+    if (data.key === "ArrowRight") p.x += 5;
+
+    checkCollision(conn.peer);
+    broadcastGameState();
+  }
+}
+
+// COLLISION
+function checkCollision(playerId) {
+  let p = players[playerId];
+  let dx = p.x - hostObject.x;
+  let dy = p.y - hostObject.y;
+  let dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist < 15) {
+    log("Collision detected");
+    broadcast({ type: "game-over", winner: p.color });
+    showEndScreen(p.color);
+  }
+}
+
+// CLIENT MESSAGE
+function handleClientMessage(data) {
+  log("Received message: " + data.type);
+
+  if (data.type === "player-list") {
+    players = data.players;
+    updatePlayerList();
+  }
+
+  if (data.type === "start-game") {
+    startCanvas();
+  }
+
+  if (data.type === "state") {
+    serverPlayers = data.players;
+    hostObject = data.hostObject;
+
+    Object.keys(serverPlayers).forEach(id => {
+      if (!renderPlayers[id]) {
+        renderPlayers[id] = { ...serverPlayers[id] };
+      }
+    });
+  }
+
+  if (data.type === "game-over") {
+    showEndScreen(data.winner);
+  }
+}
+
+// BROADCAST
+function broadcast(msg) {
+  connections.forEach(c => c.send(msg));
+}
+
+function broadcastPlayerList() {
+  broadcast({ type: "player-list", players });
+}
+
+function broadcastGameState() {
+  broadcast({ type: "state", players, hostObject });
+}
+
+// UI
+function updatePlayerList() {
+  const list = document.getElementById('playerList');
+  list.innerHTML = "";
+  Object.values(players).forEach(p => {
+    const li = document.createElement('li');
+    li.innerText = p.color;
+    li.style.color = p.color;
+    list.appendChild(li);
+  });
+}
+
+// START GAME
+function startGame() {
+  log("Starting game");
+  broadcast({ type: "start-game" });
+  startCanvas();
+}
+
+function startCanvas() {
+  canvas.style.display = "block";
+  document.body.requestFullscreen?.();
+
+  if (!isHost) {
+    window.addEventListener('keydown', e => {
+      window.conn.send({ type: "input", key: e.key });
+    });
+  }
+
+  gameLoop();
+}
+
+// GAME LOOP WITH INTERPOLATION
+function gameLoop() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (!isHost) {
+    Object.keys(serverPlayers).forEach(id => {
+      if (!renderPlayers[id]) renderPlayers[id] = { ...serverPlayers[id] };
+      renderPlayers[id].x = lerp(renderPlayers[id].x, serverPlayers[id].x, 0.2);
+      renderPlayers[id].y = lerp(renderPlayers[id].y, serverPlayers[id].y, 0.2);
+    });
+  } else {
+    renderPlayers = players;
+  }
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(hostObject.x-10, hostObject.y-10, 20, 20);
+
+  Object.values(renderPlayers).forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  requestAnimationFrame(gameLoop);
+}
+
+// END SCREEN
+function showEndScreen(winner) {
+  log("Game over. Winner: " + winner);
+  endScreen.style.display = "flex";
+  document.getElementById('endMessage').innerText = winner + " wins!";
+}
+
+function restartGame() {
+  log("Restarting game");
+  endScreen.style.display = "none";
+  if (isHost) {
+    hostObject = { x: 400, y: 300 };
+    broadcast({ type: "start-game" });
+  }
+}
+
+// CLEANUP
+function cleanup() {
+  log("Cleaning up session");
+
+  if (peer) {
+    peer.destroy();
+    peer = null;
+  }
+
+  connections = [];
+  players = {};
+  serverPlayers = {};
+  renderPlayers = {};
+
+  canvas.style.display = "none";
+  endScreen.style.display = "none";
+
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+}
+
+function leaveLobby() {
+  cleanup();
+  showScreen(document.getElementById('menuScreen'));
+}
+
+function closeLobby() {
+  cleanup();
+  showScreen(document.getElementById('menuScreen'));
+}
+
+</script>
 </body>
 </html>
