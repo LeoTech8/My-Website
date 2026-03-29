@@ -8,20 +8,19 @@ const remoteIdInput = document.getElementById('remoteIdInput');
 const startBtn = document.getElementById('startBtn');
 
 // --- GAME STATE ---
-let player = { x: 200, y: 200, width: 20, height: 20, vx: 6, vy: 6 };
-let enemy = { x: 50, y: 50, radius: 10, vx: 7, vy: 7 };
-
-let targetPlayer = { x: player.x, y: player.y };
-let targetEnemy = { x: enemy.x, y: enemy.y };
+let player = { x: 200, y: 200, width: 20, height: 20, speed: 6 };
+let enemy = { x: 50, y: 50, radius: 10, speed: 7 };
 
 let keys = {};
+let remoteKeys = {};
+
 let gameRunning = false;
 let isHost = false;
 let conn;
 
 // --- NETWORK TIMING ---
 let lastSend = 0;
-const SEND_RATE = 1000 / 40; // 🔥 40 updates/sec
+const SEND_RATE = 1000 / 30; // 30 updates/sec
 
 function generateShortId(length = 6) {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -97,18 +96,8 @@ function setupDataListener() {
             return;
         }
 
-        // --- STORE TARGET POSITIONS ---
-        if (isHost) {
-            targetEnemy.x = data.x;
-            targetEnemy.y = data.y;
-            enemy.vx = data.vx || enemy.vx;
-            enemy.vy = data.vy || enemy.vy;
-        } else {
-            targetPlayer.x = data.x;
-            targetPlayer.y = data.y;
-            player.vx = data.vx || player.vx;
-            player.vy = data.vy || player.vy;
-        }
+        // --- RECEIVE REMOTE INPUT ---
+        remoteKeys = data;
     });
 
     conn.on('close', () => {
@@ -120,12 +109,6 @@ function setupDataListener() {
 function resetPositions() {
     player.x = 200; player.y = 200;
     enemy.x = 50; enemy.y = 50;
-
-    targetPlayer.x = player.x;
-    targetPlayer.y = player.y;
-    targetEnemy.x = enemy.x;
-    targetEnemy.y = enemy.y;
-
     gameRunning = true;
     startBtn.style.display = 'none';
 }
@@ -158,64 +141,43 @@ startBtn.addEventListener('click', () => {
 function update() {
     if (!gameRunning) return;
 
-    // --- LOCAL MOVEMENT ---
+    // --- LOCAL PLAYER ---
     if (isHost) {
-        if (keys['ArrowUp']) player.y -= player.vy;
-        if (keys['ArrowDown']) player.y += player.vy;
-        if (keys['ArrowLeft']) player.x -= player.vx;
-        if (keys['ArrowRight']) player.x += player.vx;
+        if (keys['ArrowUp']) player.y -= player.speed;
+        if (keys['ArrowDown']) player.y += player.speed;
+        if (keys['ArrowLeft']) player.x -= player.speed;
+        if (keys['ArrowRight']) player.x += player.speed;
     } else {
-        if (keys['ArrowUp']) enemy.y -= enemy.vy;
-        if (keys['ArrowDown']) enemy.y += enemy.vy;
-        if (keys['ArrowLeft']) enemy.x -= enemy.vx;
-        if (keys['ArrowRight']) enemy.x += enemy.vx;
+        if (keys['ArrowUp']) enemy.y -= enemy.speed;
+        if (keys['ArrowDown']) enemy.y += enemy.speed;
+        if (keys['ArrowLeft']) enemy.x -= enemy.speed;
+        if (keys['ArrowRight']) enemy.x += enemy.speed;
     }
 
-    // --- PRO SMOOTHING + PREDICTION ---
-    const SMOOTH = 0.6;
-    const SNAP_DISTANCE = 30;
-
+    // --- REMOTE PLAYER (SIMULATED LOCALLY) ---
     if (isHost) {
-        let dx = targetEnemy.x - enemy.x;
-        let dy = targetEnemy.y - enemy.y;
-
-        if (Math.abs(dx) > SNAP_DISTANCE || Math.abs(dy) > SNAP_DISTANCE) {
-            enemy.x = targetEnemy.x;
-            enemy.y = targetEnemy.y;
-        } else {
-            enemy.x += dx * SMOOTH;
-            enemy.y += dy * SMOOTH;
-
-            enemy.x += enemy.vx * 0.6;
-            enemy.y += enemy.vy * 0.6;
-        }
-
+        if (remoteKeys.up) enemy.y -= enemy.speed;
+        if (remoteKeys.down) enemy.y += enemy.speed;
+        if (remoteKeys.left) enemy.x -= enemy.speed;
+        if (remoteKeys.right) enemy.x += enemy.speed;
     } else {
-        let dx = targetPlayer.x - player.x;
-        let dy = targetPlayer.y - player.y;
-
-        if (Math.abs(dx) > SNAP_DISTANCE || Math.abs(dy) > SNAP_DISTANCE) {
-            player.x = targetPlayer.x;
-            player.y = targetPlayer.y;
-        } else {
-            player.x += dx * SMOOTH;
-            player.y += dy * SMOOTH;
-
-            player.x += player.vx * 0.6;
-            player.y += player.vy * 0.6;
-        }
+        if (remoteKeys.up) player.y -= player.speed;
+        if (remoteKeys.down) player.y += player.speed;
+        if (remoteKeys.left) player.x -= player.speed;
+        if (remoteKeys.right) player.x += player.speed;
     }
 
-    // --- SEND DATA ---
+    // --- SEND INPUT ---
     const now = Date.now();
     if (conn && conn.open && now - lastSend > SEND_RATE) {
         lastSend = now;
 
-        if (isHost) {
-            conn.send({ x: player.x, y: player.y, vx: player.vx, vy: player.vy });
-        } else {
-            conn.send({ x: enemy.x, y: enemy.y, vx: enemy.vx, vy: enemy.vy });
-        }
+        conn.send({
+            up: keys['ArrowUp'],
+            down: keys['ArrowDown'],
+            left: keys['ArrowLeft'],
+            right: keys['ArrowRight']
+        });
     }
 
     // --- BOUNDS ---
