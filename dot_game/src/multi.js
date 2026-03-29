@@ -11,15 +11,14 @@ window.onload = () => {
     let isHost = false;
     let gameRunning = false;
     let keys = {};
-    const lerpAmount = 0.15;
 
     // The Host (Square)
-    let hostPlayer = { x: 600, y: 300, width: 20, height: 20, speed: 6, color: '#45ff01', targetX: 600, targetY: 300 };
+    let hostPlayer = { x: 600, y: 300, width: 20, height: 20, speed: 6, color: '#45ff01' };
     
     // All other players (Circles)
     let remotePlayers = {}; 
-    let connections = []; // ARRAY to fix the "Connection Closed" issue
-    let myConn;           // Client's single link to host
+    let connections = []; 
+    let myConn;
 
     const colors = ['#ff0000', '#0099ff', '#ff00ff', '#ffff00', '#ff9900', '#00ffff', '#ffffff'];
 
@@ -37,7 +36,6 @@ window.onload = () => {
         statusDiv.innerText = "Status: Ready to Host/Join";
     });
 
-    // HOST SIDE: Handling multiple incoming connections
     peer.on('connection', (newConn) => {
         if (connections.length >= 7) { 
             newConn.on('open', () => { 
@@ -50,20 +48,19 @@ window.onload = () => {
         isHost = true;
         connections.push(newConn);
         
-        // Add this specific player to our tracking object
+        // Add this specific player with direct X/Y (No targets)
         remotePlayers[newConn.peer] = { 
             x: 50, y: 50, radius: 10, 
-            color: colors[connections.length - 1],
-            targetX: 50, targetY: 50 
+            color: colors[connections.length - 1]
         };
 
         statusDiv.innerText = `Players: ${connections.length + 1}/8`;
         
-        // Listen for this specific player's movements
         newConn.on('data', (data) => {
             if (data.type === 'POS' && remotePlayers[newConn.peer]) {
-                remotePlayers[newConn.peer].targetX = data.x;
-                remotePlayers[newConn.peer].targetY = data.y;
+                // UPDATE DIRECTLY (No Interpolation)
+                remotePlayers[newConn.peer].x = data.x;
+                remotePlayers[newConn.peer].y = data.y;
             }
         });
 
@@ -74,7 +71,6 @@ window.onload = () => {
         });
     });
 
-    // CLIENT SIDE: Joining the host
     joinBtn.addEventListener('click', () => {
         myConn = peer.connect(remoteIdInput.value);
         isHost = false;
@@ -88,24 +84,22 @@ window.onload = () => {
         myConn.on('data', (data) => {
             if (data.type === 'LOBBY_FULL') alert("Lobby is full!");
             if (data.type === 'SYNC') {
-                // Sync Host Square
-                hostPlayer.targetX = data.host.x;
-                hostPlayer.targetY = data.host.y;
+                // SYNC DIRECTLY (No Interpolation)
+                hostPlayer.x = data.host.x;
+                hostPlayer.y = data.host.y;
                 
-                // Sync all other Circle Chasers
                 for (let id in data.remotes) {
                     if (!remotePlayers[id]) {
                         remotePlayers[id] = data.remotes[id];
                     }
-                    remotePlayers[id].targetX = data.remotes[id].x;
-                    remotePlayers[id].targetY = data.remotes[id].y;
+                    remotePlayers[id].x = data.remotes[id].x;
+                    remotePlayers[id].y = data.remotes[id].y;
                     remotePlayers[id].color = data.remotes[id].color;
                 }
             }
         });
     });
 
-    // --- CONTROLS ---
     document.addEventListener('keydown', (e) => keys[e.key] = true);
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
@@ -113,7 +107,6 @@ window.onload = () => {
         isHost = true;
         gameRunning = true;
         startBtn.style.display = 'none';
-        statusDiv.innerText = "Status: Hosting Game";
     });
 
     function update() {
@@ -121,36 +114,27 @@ window.onload = () => {
 
         if (isHost) {
             // Host moves Square
-            if (keys['ArrowUp']) hostPlayer.targetY -= hostPlayer.speed;
-            if (keys['ArrowDown']) hostPlayer.targetY += hostPlayer.speed;
-            if (keys['ArrowLeft']) hostPlayer.targetX -= hostPlayer.speed;
-            if (keys['ArrowRight']) hostPlayer.targetX += hostPlayer.speed;
+            if (keys['ArrowUp']) hostPlayer.y -= hostPlayer.speed;
+            if (keys['ArrowDown']) hostPlayer.y += hostPlayer.speed;
+            if (keys['ArrowLeft']) hostPlayer.x -= hostPlayer.speed;
+            if (keys['ArrowRight']) hostPlayer.x += hostPlayer.speed;
             
-            // Host broadcasts EVERYONE'S position to EVERYONE
+            // Broadcast positions
             connections.forEach(c => {
                 if (c.open) c.send({ type: 'SYNC', host: hostPlayer, remotes: remotePlayers });
             });
             checkAllCollisions();
         } else {
-            // Client moves THEIR specific circle
+            // Client moves THEIR circle
             let me = remotePlayers[peer.id];
             if (me) {
-                if (keys['ArrowUp']) me.targetY -= 5;
-                if (keys['ArrowDown']) me.targetY += 5;
-                if (keys['ArrowLeft']) me.targetX -= 5;
-                if (keys['ArrowRight']) me.targetX += 5;
-                myConn.send({ type: 'POS', x: me.targetX, y: me.targetY });
+                let circleSpeed = 7; // Circles are slightly faster
+                if (keys['ArrowUp']) me.y -= circleSpeed;
+                if (keys['ArrowDown']) me.y += circleSpeed;
+                if (keys['ArrowLeft']) me.x -= circleSpeed;
+                if (keys['ArrowRight']) me.x += circleSpeed;
+                myConn.send({ type: 'POS', x: me.x, y: me.y });
             }
-        }
-
-        // Interpolation (Smoothing all players)
-        hostPlayer.x += (hostPlayer.targetX - hostPlayer.x) * lerpAmount;
-        hostPlayer.y += (hostPlayer.targetY - hostPlayer.y) * lerpAmount;
-
-        for (let id in remotePlayers) {
-            let p = remotePlayers[id];
-            p.x += (p.targetX - p.x) * lerpAmount;
-            p.y += (p.targetY - p.y) * lerpAmount;
         }
     }
 
@@ -168,7 +152,7 @@ window.onload = () => {
     }
 
     function draw() {
-        // Trail Effect
+        // TRAIL EFFECT (Kept)
         ctx.fillStyle = 'rgba(34, 34, 34, 0.3)'; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
