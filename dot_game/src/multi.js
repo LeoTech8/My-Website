@@ -39,6 +39,7 @@
         peer.on('open', (id) => {
             myIdDiv.innerText = "My ID: " + id;
             statusDiv.innerText = "Status: Ready to Host or Join";
+            conn = peer.connect(id);
         });
 
         peer.on('connection', (connection) => {
