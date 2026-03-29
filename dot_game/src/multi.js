@@ -8,15 +8,20 @@ const remoteIdInput = document.getElementById('remoteIdInput');
 const startBtn = document.getElementById('startBtn');
 
 // --- GAME STATE ---
-let player = { x: 200, y: 200, width: 20, height: 20, vx: 6, vy: 6 }; // Square (Host)
-let enemy = { x: 50, y: 50, radius: 10, vx: 7, vy: 7 };               // Circle (Client)
+let player = { x: 200, y: 200, width: 20, height: 20, vx: 6, vy: 6 };
+let enemy = { x: 50, y: 50, radius: 10, vx: 7, vy: 7 };
+
 let keys = {};
 let gameRunning = false;
-let isHost = false; 
+let isHost = false;
 let conn;
 
+// --- NETWORK TIMING ---
+let lastSend = 0;
+const SEND_RATE = 1000 / 20; // 20 packets/sec
+
 function generateShortId(length = 5) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
     for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -25,14 +30,16 @@ function generateShortId(length = 5) {
 }
 
 // --- NETWORKING ---
-const myShortId = generateShortId(5);
+const myShortId = generateShortId(6);
 
 const peer = new Peer(myShortId, {
     host: '0.peerjs.com',
     port: 443,
     secure: true,
-    debug: 3 
+    debug: 2
 });
+
+console.log("Peer object:", peer);
 
 peer.on('open', (id) => {
     myIdDiv.innerText = "My ID: " + id;
@@ -54,9 +61,10 @@ peer.on('connection', (connection) => {
 });
 
 peer.on('error', (err) => {
+    console.error("Peer error:", err);
     if (err.type === 'unavailable-id') {
         alert("ID already taken, refreshing...");
-        location.reload(); 
+        location.reload();
     }
 });
 
@@ -82,17 +90,23 @@ function setupDataListener() {
             conn.close();
             return;
         }
+
         if (data.type === 'RESTART') {
             resetPositions();
             return;
         }
 
+        // --- SMOOTH INTERPOLATION ---
         if (isHost) {
-            enemy.x = data.x;
-            enemy.y = data.y;
+            enemy.x += (data.x - enemy.x) * 0.3;
+            enemy.y += (data.y - enemy.y) * 0.3;
+            enemy.vx = data.vx || enemy.vx;
+            enemy.vy = data.vy || enemy.vy;
         } else {
-            player.x = data.x;
-            player.y = data.y;
+            player.x += (data.x - player.x) * 0.3;
+            player.y += (data.y - player.y) * 0.3;
+            player.vx = data.vx || player.vx;
+            player.vy = data.vy || player.vy;
         }
     });
 
@@ -137,21 +151,32 @@ startBtn.addEventListener('click', () => {
 function update() {
     if (!gameRunning) return;
 
+    // --- MOVEMENT ---
     if (isHost) {
         if (keys['ArrowUp']) player.y -= player.vy;
         if (keys['ArrowDown']) player.y += player.vy;
         if (keys['ArrowLeft']) player.x -= player.vx;
         if (keys['ArrowRight']) player.x += player.vx;
-        if (conn && conn.open) conn.send({ x: player.x, y: player.y });
     } else {
         if (keys['ArrowUp']) enemy.y -= enemy.vy;
         if (keys['ArrowDown']) enemy.y += enemy.vy;
         if (keys['ArrowLeft']) enemy.x -= enemy.vx;
         if (keys['ArrowRight']) enemy.x += enemy.vx;
-        if (conn && conn.open) conn.send({ x: enemy.x, y: enemy.y });
     }
 
-    // Bounds
+    // --- SEND DATA (RATE LIMITED) ---
+    const now = Date.now();
+    if (conn && conn.open && now - lastSend > SEND_RATE) {
+        lastSend = now;
+
+        if (isHost) {
+            conn.send({ x: player.x, y: player.y, vx: player.vx, vy: player.vy });
+        } else {
+            conn.send({ x: enemy.x, y: enemy.y, vx: enemy.vx, vy: enemy.vy });
+        }
+    }
+
+    // --- BOUNDS ---
     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
@@ -161,19 +186,16 @@ function update() {
 }
 
 function draw() {
-    // --- PLAYER TRAILS ---
-    // Instead of clearRect, we paint a faint background every frame
-    ctx.fillStyle = 'rgba(34, 34, 34, 0.3)'; // 0.3 controls trail length
+    ctx.fillStyle = 'rgba(34, 34, 34, 0.3)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = '#45ff01';
     ctx.fillRect(player.x, player.y, player.width, player.height);
-    
+
     ctx.fillStyle = '#ff0000';
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.closePath();
 }
 
 function gameLoop() {
@@ -183,4 +205,4 @@ function gameLoop() {
 }
 
 gameLoop();
-}
+};
