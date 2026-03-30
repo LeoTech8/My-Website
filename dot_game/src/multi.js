@@ -30,26 +30,19 @@ const myShortId = generateShortId(5);
 const peer = new Peer(myShortId, {
     config: {
         iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
             {
-                // Trying a different Metered endpoint that often escapes blocks
-                urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                // We are forcing the relay through a common port (443) 
+                // and forcing it to use TCP (web style) instead of UDP (game style).
+                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
             }
         ],
-        iceTransportPolicy: 'relay'
+        iceTransportPolicy: 'relay', // This is non-negotiable on school wifi
+        iceCandidatePoolSize: 10     // Pre-fetches connection routes to speed it up
     }
 });
-
-
-
-
-
-
-
-
-
+    
 peer.on('open', (id) => {
     myIdDiv.innerText = "My ID: " + id;
     statusDiv.innerText = "Status: Ready to Host or Join";
@@ -79,11 +72,27 @@ peer.on('error', (err) => {
 joinBtn.addEventListener('click', () => {
     const remoteId = remoteIdInput.value;
     if (!remoteId) return alert("Enter an ID!");
-    conn = peer.connect(remoteId);
-    isHost = false;
+    
     statusDiv.innerText = "Status: Connecting...";
+    
+    // Attempt the connection
+    conn = peer.connect(remoteId, {
+        reliable: true,
+        connectionReplyTimeout: 10000 // Wait 10 seconds before giving up
+    });
+    
+    isHost = false;
     setupDataListener();
+
+    // FAILSAFE: If it hasn't connected in 10 seconds, the school is blocking it
+    setTimeout(() => {
+        if (statusDiv.innerText === "Status: Connecting...") {
+            statusDiv.innerText = "Status: Blocked by Firewall (Timed Out)";
+            console.log("The network dropped the connection packets.");
+        }
+    }, 10000);
 });
+
 
 function setupDataListener() {
     // This helper runs the "Start Game" logic
