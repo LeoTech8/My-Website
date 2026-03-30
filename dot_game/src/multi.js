@@ -27,7 +27,7 @@ function generateShortId(length = 5) {
 // --- NETWORKING ---
 const myShortId = generateShortId(5);
 
-const peer = new Peer(myShortId{
+const peer = new Peer(myShortId, { // Added the missing comma here
     config: {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' }, 
@@ -37,14 +37,15 @@ const peer = new Peer(myShortId{
                 credential: 'openrelayproject' 
             },
             { 
-                urls: 'turns:openrelay.metered.ca:443', 
+                urls: 'turns:openrelay.metered.ca:443?transport=tcp', // Added ?transport=tcp
                 username: 'openrelayproject', 
                 credential: 'openrelayproject' 
             }
         ],
-        iceTransportPolicy: 'all' // Allows direct P2P if possible, falling back to TURN only if needed
+        iceTransportPolicy: 'relay' // Changed 'all' to 'relay' to force the school bypass
     }
 });
+
 
 
 
