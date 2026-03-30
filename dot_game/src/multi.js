@@ -30,16 +30,18 @@ const myShortId = generateShortId(5);
 const peer = new Peer(myShortId, {
     config: {
         iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
             {
-                // Port 80 is the standard "Web" port and may bypass some UDP/TCP blocks
-                urls: 'turn:openrelay.metered.ca:80', 
+                // Trying a different Metered endpoint that often escapes blocks
+                urls: 'turns:global.relay.metered.ca:443?transport=tcp',
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
             }
         ],
-        iceTransportPolicy: 'relay' // REQUIRED: Forces the relay to bypass Client Isolation
+        iceTransportPolicy: 'relay'
     }
 });
+
 
 
 
