@@ -31,18 +31,16 @@ const peer = new Peer(myShortId, {
     config: {
         iceServers: [
             {
-                // We use 'turns' (with an 's') for SSL encryption
-                // and 'transport=tcp' to avoid UDP blocks
-                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+                // Port 80 is the standard "Web" port and may bypass some UDP/TCP blocks
+                urls: 'turn:openrelay.metered.ca:80', 
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
             }
         ],
-        // IMPORTANT: 'relay' forces the data to go through the server 
-        // instead of trying (and failing) to talk laptop-to-laptop.
-        iceTransportPolicy: 'relay'
+        iceTransportPolicy: 'relay' // REQUIRED: Forces the relay to bypass Client Isolation
     }
 });
+
 
 
 
