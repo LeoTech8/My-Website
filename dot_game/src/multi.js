@@ -31,17 +31,20 @@ const peer = new Peer(myShortId, {
     config: {
         iceServers: [
             {
-                // We are forcing the relay through a common port (443) 
-                // and forcing it to use TCP (web style) instead of UDP (game style).
+                // This 'turns' (with an 's') and '?transport=tcp' 
+                // tells the browser to wrap your game data in 
+                // standard web encryption (TLS) on port 443.
                 urls: 'turns:openrelay.metered.ca:443?transport=tcp',
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
             }
         ],
-        iceTransportPolicy: 'relay', // This is non-negotiable on school wifi
-        iceCandidatePoolSize: 10     // Pre-fetches connection routes to speed it up
+        // This forces the connection to ONLY use the relay server, 
+        // bypassing the school's block on direct laptop-to-laptop talk.
+        iceTransportPolicy: 'relay'
     }
 });
+
     
 peer.on('open', (id) => {
     myIdDiv.innerText = "My ID: " + id;
