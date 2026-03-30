@@ -28,19 +28,22 @@ function generateShortId(length = 5) {
 const myShortId = generateShortId(5);
 
 const peer = new Peer(myShortId, {
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' }, // Common backup STUN
-      {
-        // 'turns' on port 443 is the most likely to bypass school firewalls
-        urls: 'turns:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
-    ],
-    iceTransportPolicy: 'all' // Allows more connection attempts
-  }
+    config: {
+        iceServers: [
+            {
+                // We use 'turns' (with an 's') for SSL encryption
+                // and 'transport=tcp' to avoid UDP blocks
+                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
+        ],
+        // IMPORTANT: 'relay' forces the data to go through the server 
+        // instead of trying (and failing) to talk laptop-to-laptop.
+        iceTransportPolicy: 'relay'
+    }
 });
+
 
 
 
@@ -83,11 +86,20 @@ joinBtn.addEventListener('click', () => {
 });
 
 function setupDataListener() {
-    conn.on('open', () => {
+    // This helper runs the "Start Game" logic
+    const startConnection = () => {
         statusDiv.innerText = "Status: Connected!";
         gameRunning = true;
         startBtn.style.display = 'none';
-    });
+    };
+
+    // If it's already open, start immediately
+    if (conn.open) {
+        startConnection();
+    } else {
+        // Otherwise, wait for it to open
+        conn.on('open', startConnection);
+    }
 
     conn.on('data', (data) => {
         if (data.type === 'LOBBY_FULL') {
@@ -99,7 +111,6 @@ function setupDataListener() {
             resetPositions();
             return;
         }
-
         if (isHost) {
             enemy.x = data.x;
             enemy.y = data.y;
@@ -113,7 +124,13 @@ function setupDataListener() {
         statusDiv.innerText = "Status: Connection Closed";
         gameRunning = false;
     });
+    
+    // Catch errors specifically for the connection
+    conn.on('error', (err) => {
+        statusDiv.innerText = "Status: Connection Error: " + err;
+    });
 }
+
 
 function resetPositions() {
     player.x = 200; player.y = 200;
