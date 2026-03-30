@@ -28,26 +28,18 @@ window.onload = () => {
     // --- NETWORKING ---
     const myShortId = generateShortId(5);
 
-    const peer = new Peer(myShortId, {
-        debug: 2,
-        config: {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                {
-                    urls: [
-                        'turn:openrelay.metered.ca:80',
-                        'turn:openrelay.metered.ca:443',
-                        'turns:openrelay.metered.ca:443?transport=tcp'
-                    ],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ],
-            iceCandidatePoolSize: 10
-        }
-    });
+const peer = new Peer(myShortId, {
+    host: '0.peerjs.com',
+    port: 443,
+    secure: true,
+    path: '/',
+    debug: 2,
+    config: {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' }
+        ]
+    }
+});
 
     // --- PEER DEBUG ---
     peer.on('open', (id) => {
