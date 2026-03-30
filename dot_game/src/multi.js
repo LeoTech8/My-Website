@@ -27,7 +27,7 @@ function generateShortId(length = 5) {
 // --- NETWORKING ---
 const myShortId = generateShortId(5);
 
-const peer = new Peer({
+const peer = new Peer(myShortId{
     config: {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' }, 
