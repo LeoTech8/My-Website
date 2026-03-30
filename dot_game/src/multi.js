@@ -27,24 +27,21 @@ function generateShortId(length = 5) {
 // --- NETWORKING ---
 const myShortId = generateShortId(5);
 
-const peer = new Peer(myShortId, { // Added the missing comma here
+const peer = new Peer(myShortId, {
     config: {
         iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' }, 
             { 
-                urls: 'turn:openrelay.metered.ca:80', 
-                username: 'openrelayproject', 
-                credential: 'openrelayproject' 
-            },
-            { 
-                urls: 'turns:openrelay.metered.ca:443?transport=tcp', // Added ?transport=tcp
+                // This specific URL tells the browser to use TLS (encryption) 
+                // and TCP, which makes it look like standard HTTPS traffic.
+                urls: 'turns:openrelay.metered.ca:443?transport=tcp', 
                 username: 'openrelayproject', 
                 credential: 'openrelayproject' 
             }
         ],
-        iceTransportPolicy: 'relay' // Changed 'all' to 'relay' to force the school bypass
+        iceTransportPolicy: 'relay' 
     }
 });
+
 
 
 
