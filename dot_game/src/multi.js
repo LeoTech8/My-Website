@@ -28,19 +28,20 @@ function generateShortId(length = 5) {
 const myShortId = generateShortId(5);
 
 const peer = new Peer(myShortId, {
-    config: {
-        iceServers: [
-            { 
-                // This specific URL tells the browser to use TLS (encryption) 
-                // and TCP, which makes it look like standard HTTPS traffic.
-                urls: 'turns:openrelay.metered.ca:443?transport=tcp', 
-                username: 'openrelayproject', 
-                credential: 'openrelayproject' 
-            }
-        ],
-        iceTransportPolicy: 'relay' 
-    }
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' }, // Common backup STUN
+      {
+        // 'turns' on port 443 is the most likely to bypass school firewalls
+        urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ],
+    iceTransportPolicy: 'all' // Allows more connection attempts
+  }
 });
+
 
 
 
