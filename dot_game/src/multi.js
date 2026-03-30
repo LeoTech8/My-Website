@@ -27,12 +27,21 @@ function generateShortId(length = 5) {
 // --- NETWORKING ---
 const myShortId = generateShortId(5);
 
-const peer = new Peer(myShortId, {
-    host: '0.peerjs.com',
-    port: 443,
-    secure: true,
-    debug: 3 
+const peer = new Peer({
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      {
+        urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ],
+    iceTransportPolicy: 'relay'
+  }
 });
+
+
 
 peer.on('open', (id) => {
     myIdDiv.innerText = "My ID: " + id;
