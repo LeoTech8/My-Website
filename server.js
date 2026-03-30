@@ -6,77 +6,78 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-    cors: {
-        origin: "*"
-    }
+    cors: { origin: "*" }
 });
 
 const PORT = process.env.PORT || 3000;
 
-let players = {};
-let hostId = null;
+let rooms = {}; // { roomCode: [socketIds] }
+
+// Generate 5-digit room code
+function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+}
 
 io.on('connection', (socket) => {
     console.log("Connected:", socket.id);
 
-    // Assign host
-    if (!hostId) hostId = socket.id;
+    // Create room
+    socket.on('createRoom', () => {
+        let code = generateCode();
 
-    players[socket.id] = {
-        x: Math.random() * 400,
-        y: Math.random() * 400,
-        isHost: socket.id === hostId
-    };
+        rooms[code] = [socket.id];
+        socket.join(code);
 
-    // Send initial state
-    socket.emit('init', {
-        id: socket.id,
-        players,
-        hostId
+        socket.emit('roomCreated', code);
+        console.log("Room created:", code);
     });
 
-    socket.broadcast.emit('playerJoined', {
-        id: socket.id,
-        data: players[socket.id]
-    });
-
-    // Movement
-    socket.on('move', (data) => {
-        if (!players[socket.id]) return;
-
-        players[socket.id].x = data.x;
-        players[socket.id].y = data.y;
-
-        socket.broadcast.emit('playerMoved', {
-            id: socket.id,
-            x: data.x,
-            y: data.y
-        });
-    });
-
-    // Restart (host only)
-    socket.on('restart', () => {
-        if (socket.id !== hostId) return;
-
-        for (let id in players) {
-            players[id].x = Math.random() * 400;
-            players[id].y = Math.random() * 400;
+    // Join room
+    socket.on('joinRoom', (code) => {
+        if (!rooms[code]) {
+            socket.emit('errorMsg', "Room not found");
+            return;
         }
 
-        io.emit('restart', players);
+        if (rooms[code].length >= 2) {
+            socket.emit('errorMsg', "Room full");
+            return;
+        }
+
+        rooms[code].push(socket.id);
+        socket.join(code);
+
+        socket.emit('joinedRoom', code);
+        io.to(code).emit('playerCount', rooms[code].length);
+
+        console.log("Player joined room:", code);
+    });
+
+    // Movement sync within room
+    socket.on('move', ({ room, x, y }) => {
+        socket.to(room).emit('playerMoved', { x, y });
+    });
+
+    // Restart
+    socket.on('restart', (room) => {
+        io.to(room).emit('restart');
     });
 
     socket.on('disconnect', () => {
         console.log("Disconnected:", socket.id);
 
-        delete players[socket.id];
+        for (let room in rooms) {
+            rooms[room] = rooms[room].filter(id => id !== socket.id);
 
-        if (socket.id === hostId) {
-            const ids = Object.keys(players);
-            hostId = ids.length > 0 ? ids[0] : null;
+            if (rooms[room].length === 0) {
+                delete rooms[room];
+            }
         }
-
-        io.emit('playerLeft', socket.id);
     });
 });
 
