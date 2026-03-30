@@ -1,228 +1,248 @@
 window.onload = () => {
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const statusDiv = document.getElementById('status');
-const myIdDiv = document.getElementById('myIdDisplay');
-const joinBtn = document.getElementById('joinBtn');
-const remoteIdInput = document.getElementById('remoteIdInput');
-const startBtn = document.getElementById('startBtn');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('status');
+    const myIdDiv = document.getElementById('myIdDisplay');
+    const joinBtn = document.getElementById('joinBtn');
+    const remoteIdInput = document.getElementById('remoteIdInput');
+    const startBtn = document.getElementById('startBtn');
 
-// --- GAME STATE ---
-let player = { x: 200, y: 200, width: 20, height: 20, vx: 6, vy: 6 }; // Square (Host)
-let enemy = { x: 50, y: 50, radius: 10, vx: 7, vy: 7 };               // Circle (Client)
-let keys = {};
-let gameRunning = false;
-let isHost = false; 
-let conn;
+    // --- GAME STATE ---
+    let player = { x: 200, y: 200, width: 20, height: 20, vx: 6, vy: 6 };
+    let enemy = { x: 50, y: 50, radius: 10, vx: 7, vy: 7 };
+    let keys = {};
+    let gameRunning = false;
+    let isHost = false;
 
-function generateShortId(length = 5) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-}
+    let conn;
 
-// --- NETWORKING ---
-const myShortId = generateShortId(5);
-
-const peer = new Peer(myShortId, {
-    config: {
-        iceServers: [
-            {
-                // This 'turns' (with an 's') and '?transport=tcp' 
-                // tells the browser to wrap your game data in 
-                // standard web encryption (TLS) on port 443.
-                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
-            }
-        ],
-        // This forces the connection to ONLY use the relay server, 
-        // bypassing the school's block on direct laptop-to-laptop talk.
-        iceTransportPolicy: 'relay'
-    }
-});
-
-    
-peer.on('open', (id) => {
-    myIdDiv.innerText = "My ID: " + id;
-    statusDiv.innerText = "Status: Ready to Host or Join";
-});
-
-peer.on('connection', (connection) => {
-    if (conn && conn.open) {
-        connection.on('open', () => {
-            connection.send({ type: 'LOBBY_FULL' });
-            setTimeout(() => connection.close(), 500);
-        });
-        return;
-    }
-    conn = connection;
-    isHost = true;
-    statusDiv.innerText = "Status: Connected! (You are HOST)";
-    setupDataListener();
-});
-
-peer.on('error', (err) => {
-    if (err.type === 'unavailable-id') {
-        alert("ID already taken, refreshing...");
-        location.reload(); 
-    }
-});
-
-joinBtn.addEventListener('click', () => {
-    const remoteId = remoteIdInput.value;
-    if (!remoteId) return alert("Enter an ID!");
-    
-    statusDiv.innerText = "Status: Connecting...";
-    
-    // Attempt the connection
-    conn = peer.connect(remoteId, {
-        reliable: true,
-        connectionReplyTimeout: 10000 // Wait 10 seconds before giving up
-    });
-    
-    isHost = false;
-    setupDataListener();
-
-    // FAILSAFE: If it hasn't connected in 10 seconds, the school is blocking it
-    setTimeout(() => {
-        if (statusDiv.innerText === "Status: Connecting...") {
-            statusDiv.innerText = "Status: Blocked by Firewall (Timed Out)";
-            console.log("The network dropped the connection packets.");
+    function generateShortId(length = 5) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-    }, 10000);
-});
+        return result;
+    }
 
+    // --- NETWORKING ---
+    const myShortId = generateShortId(5);
 
-function setupDataListener() {
-    // This helper runs the "Start Game" logic
-    const startConnection = () => {
-        statusDiv.innerText = "Status: Connected!";
+    const peer = new Peer(myShortId, {
+        debug: 2,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                {
+                    urls: [
+                        'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:443',
+                        'turns:openrelay.metered.ca:443?transport=tcp'
+                    ],
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
+        }
+    });
+
+    // --- PEER DEBUG ---
+    peer.on('open', (id) => {
+        console.log("🟢 Peer open:", id);
+        myIdDiv.innerText = "My ID: " + id;
+        statusDiv.innerText = "Status: Ready to Host or Join";
+    });
+
+    peer.on('error', (err) => {
+        console.error("🔥 Peer error:", err);
+        if (err.type === 'unavailable-id') {
+            alert("ID taken, refreshing...");
+            location.reload();
+        }
+    });
+
+    peer.on('disconnected', () => {
+        console.warn("⚠️ Peer disconnected");
+    });
+
+    peer.on('close', () => {
+        console.warn("❌ Peer closed");
+    });
+
+    // --- HOST ACCEPT ---
+    peer.on('connection', (connection) => {
+        if (conn && conn.open) {
+            connection.on('open', () => {
+                connection.send({ type: 'LOBBY_FULL' });
+                setTimeout(() => connection.close(), 500);
+            });
+            return;
+        }
+
+        conn = connection;
+        isHost = true;
+
+        conn.on('open', () => {
+            console.log("✅ Incoming connection open");
+            statusDiv.innerText = "Status: Connected! (HOST)";
+            setupDataListener();
+        });
+    });
+
+    // --- JOIN ---
+    joinBtn.addEventListener('click', () => {
+        const remoteId = remoteIdInput.value;
+        if (!remoteId) return alert("Enter an ID!");
+
+        statusDiv.innerText = "Status: Connecting...";
+        console.log("🔌 Attempting connection to:", remoteId);
+
+        conn = peer.connect(remoteId, {
+            reliable: true
+        });
+
+        isHost = false;
+
+        conn.on('open', () => {
+            console.log("✅ Outgoing connection open");
+            statusDiv.innerText = "Status: Connected!";
+            setupDataListener();
+        });
+
+        // Timeout detection
+        setTimeout(() => {
+            if (!conn || !conn.open) {
+                statusDiv.innerText = "Blocked ❌ (Try hotspot)";
+                console.warn("⛔ Likely network blocking WebRTC");
+            }
+        }, 8000);
+    });
+
+    function setupDataListener() {
+        conn.on('data', (data) => {
+            if (data.type === 'LOBBY_FULL') {
+                statusDiv.innerText = "Status: Lobby Full!";
+                conn.close();
+                return;
+            }
+
+            if (data.type === 'RESTART') {
+                resetPositions();
+                return;
+            }
+
+            if (isHost) {
+                enemy.x = data.x;
+                enemy.y = data.y;
+            } else {
+                player.x = data.x;
+                player.y = data.y;
+            }
+        });
+
+        conn.on('close', () => {
+            console.log("❌ Connection closed");
+            statusDiv.innerText = "Status: Connection Closed";
+            gameRunning = false;
+        });
+
+        conn.on('error', (err) => {
+            console.error("🔥 Connection error:", err);
+            statusDiv.innerText = "Connection Error";
+        });
+
+        // ICE debugging (advanced)
+        if (conn.peerConnection) {
+            conn.peerConnection.addEventListener('iceconnectionstatechange', () => {
+                console.log("ICE state:", conn.peerConnection.iceConnectionState);
+            });
+        }
+
         gameRunning = true;
         startBtn.style.display = 'none';
-    };
-
-    // If it's already open, start immediately
-    if (conn.open) {
-        startConnection();
-    } else {
-        // Otherwise, wait for it to open
-        conn.on('open', startConnection);
     }
 
-    conn.on('data', (data) => {
-        if (data.type === 'LOBBY_FULL') {
-            statusDiv.innerText = "Status: Lobby Full!";
-            conn.close();
-            return;
+    function resetPositions() {
+        player.x = 200; player.y = 200;
+        enemy.x = 50; enemy.y = 50;
+        gameRunning = true;
+        startBtn.style.display = 'none';
+    }
+
+    function checkCollision() {
+        let closestX = Math.max(player.x, Math.min(enemy.x, player.x + player.width));
+        let closestY = Math.max(player.y, Math.min(enemy.y, player.y + player.height));
+        let dx = enemy.x - closestX;
+        let dy = enemy.y - closestY;
+
+        if ((dx * dx + dy * dy) < (enemy.radius * enemy.radius)) {
+            gameRunning = false;
+            startBtn.style.display = 'block';
+            startBtn.innerText = "Collision! Restart?";
         }
-        if (data.type === 'RESTART') {
-            resetPositions();
-            return;
-        }
-        if (isHost) {
-            enemy.x = data.x;
-            enemy.y = data.y;
+    }
+
+    document.addEventListener('keydown', (e) => keys[e.key] = true);
+    document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+    startBtn.addEventListener('click', () => {
+        resetPositions();
+
+        if (!conn || !conn.open) {
+            isHost = true;
+            statusDiv.innerText = "Status: Hosting... Waiting for join.";
         } else {
-            player.x = data.x;
-            player.y = data.y;
+            conn.send({ type: 'RESTART' });
         }
     });
 
-    conn.on('close', () => {
-        statusDiv.innerText = "Status: Connection Closed";
-        gameRunning = false;
-    });
-    
-    // Catch errors specifically for the connection
-    conn.on('error', (err) => {
-        statusDiv.innerText = "Status: Connection Error: " + err;
-    });
-}
+    function update() {
+        if (!gameRunning) return;
 
+        if (isHost) {
+            if (keys['ArrowUp']) player.y -= player.vy;
+            if (keys['ArrowDown']) player.y += player.vy;
+            if (keys['ArrowLeft']) player.x -= player.vx;
+            if (keys['ArrowRight']) player.x += player.vx;
+            if (conn && conn.open) conn.send({ x: player.x, y: player.y });
+        } else {
+            if (keys['ArrowUp']) enemy.y -= enemy.vy;
+            if (keys['ArrowDown']) enemy.y += enemy.vy;
+            if (keys['ArrowLeft']) enemy.x -= enemy.vx;
+            if (keys['ArrowRight']) enemy.x += enemy.vx;
+            if (conn && conn.open) conn.send({ x: enemy.x, y: enemy.y });
+        }
 
-function resetPositions() {
-    player.x = 200; player.y = 200;
-    enemy.x = 50; enemy.y = 50;
-    gameRunning = true;
-    startBtn.style.display = 'none';
-}
+        player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+        player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+        enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
+        enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
 
-function checkCollision() {
-    let closestX = Math.max(player.x, Math.min(enemy.x, player.x + player.width));
-    let closestY = Math.max(player.y, Math.min(enemy.y, player.y + player.height));
-    let dx = enemy.x - closestX;
-    let dy = enemy.y - closestY;
-    if ((dx * dx + dy * dy) < (enemy.radius * enemy.radius)) {
-        gameRunning = false;
-        startBtn.style.display = 'block';
-        startBtn.innerText = "Collision! Restart?";
-    }
-}
-
-document.addEventListener('keydown', (e) => keys[e.key] = true);
-document.addEventListener('keyup', (e) => keys[e.key] = false);
-
-startBtn.addEventListener('click', () => {
-    resetPositions();
-    if (!conn || !conn.open) {
-        isHost = true;
-        statusDiv.innerText = "Status: Hosting... Waiting for join.";
-    } else {
-        conn.send({ type: 'RESTART' });
-    }
-});
-
-function update() {
-    if (!gameRunning) return;
-
-    if (isHost) {
-        if (keys['ArrowUp']) player.y -= player.vy;
-        if (keys['ArrowDown']) player.y += player.vy;
-        if (keys['ArrowLeft']) player.x -= player.vx;
-        if (keys['ArrowRight']) player.x += player.vx;
-        if (conn && conn.open) conn.send({ x: player.x, y: player.y });
-    } else {
-        if (keys['ArrowUp']) enemy.y -= enemy.vy;
-        if (keys['ArrowDown']) enemy.y += enemy.vy;
-        if (keys['ArrowLeft']) enemy.x -= enemy.vx;
-        if (keys['ArrowRight']) enemy.x += enemy.vx;
-        if (conn && conn.open) conn.send({ x: enemy.x, y: enemy.y });
+        if (conn && conn.open) checkCollision();
     }
 
-    // Bounds
-    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-    enemy.x = Math.max(enemy.radius, Math.min(canvas.width - enemy.radius, enemy.x));
-    enemy.y = Math.max(enemy.radius, Math.min(canvas.height - enemy.radius, enemy.y));
+    function draw() {
+        ctx.fillStyle = 'rgba(34, 34, 34, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (conn && conn.open) checkCollision();
-}
+        ctx.fillStyle = '#45ff01';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
 
-function draw() {
-    // --- PLAYER TRAILS ---
-    // Instead of clearRect, we paint a faint background every frame
-    ctx.fillStyle = 'rgba(34, 34, 34, 0.3)'; // 0.3 controls trail length
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = '#45ff01';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    
-    ctx.fillStyle = '#ff0000';
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.closePath();
-}
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+    }
 
-function gameLoop() {
-    if (gameRunning) update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
+    function gameLoop() {
+        if (gameRunning) update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
 
-gameLoop();
-}
+    gameLoop();
+};
