@@ -1,297 +1,436 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Inspired Minds Project - SinglePlayer</title>
+<head>
+<title>Inspired Minds Project - SinglePlayer</title>
 <style>
-    body { 
-        background: #222; 
-        color: white; 
-        font-family: sans-serif; 
-        text-align: center; 
-    }
-    h1 {
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        cursor: pointer;
-    }
-    canvas { 
-        background: #000; 
-        border: 2px solid #444; 
-        display: block; 
-        margin: 10px auto; 
-    }
-    /* This creates the dark grey box around your buttons */
-    .menu { 
-        background: #333; 
-        padding: 15px; 
-        border-radius: 8px; 
-        display: inline-block; 
-        margin-top: 10px; 
-        margin-bottom: 10px;
-    }
-    /* Styling for all buttons to match the green theme */
-    button { 
-        padding: 8px 15px; 
-        cursor: pointer; 
-        background: #45ff01; 
-        border: none; 
-        border-radius: 4px; 
-        font-weight: bold; 
-        margin: 2px;
-    }
-    button:hover {
-        background: #32ba00;
-    }
-    a { text-decoration: none; }
+body{
+    background:#222;
+    color:white;
+    font-family:sans-serif;
+    text-align:center;
+}
+h1{
+    font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    cursor:pointer;
+}
+canvas{
+    background:#000;
+    border:2px solid #444;
+    display:block;
+    margin:10px auto;
+}
+.menu{
+    background:#333;
+    padding:15px;
+    border-radius:8px;
+    display:inline-block;
+    margin-top:10px;
+    margin-bottom:10px;
+}
+button{
+    padding:8px 15px;
+    cursor:pointer;
+    background:#45ff01;
+    border:none;
+    border-radius:4px;
+    font-weight:bold;
+    margin:2px;
+}
+button:hover{
+    background:#32ba00;
+}
+a{
+    text-decoration:none;
+}
 </style>
+</head>
 
-    </head>
-    <body>
-        <div id="singleplayerGameArea">
-            <h1 onclick="easteregg()">Inspired Minds Game</h1>
-            <p id="highScore"></p>
-            <div class="menu">
-            <a href="index.html"><button>Back To Menu</button></a>
-            <button onclick="toggleSlowMode()">Slow Motion</button>
-            <button onclick="togglePause()">Pause</button>
-            <button onclick="hardMode()">Hard Mode</button>
-            <button onclick="insaneMode()">Insane Mode</button>
-            <button id="startBtn">Start Game</button>
-            </div>
-            <br>
-            <br>
-            <canvas id="singleplayerGameCanvas" width="1350" height="650 ">
-            Your browser does not support the HTML canvas element. (Gee it must be quite old)
-            </canvas>
-    </body>
-    <script>
+<body>
+<div id="singleplayerGameArea">
+
+<h1 onclick="easteregg()">Inspired Minds Game</h1>
+
+<p id="highScore"></p>
+<p id="playerName"></p>
+
+<div class="menu">
+<a href="index.html"><button>Back To Menu</button></a>
+<button onclick="toggleSlowMode()">Slow Motion</button>
+<button onclick="togglePause()">Pause</button>
+<button onclick="hardMode()">Hard Mode</button>
+<button onclick="insaneMode()">Insane Mode</button>
+<button id="startBtn">Start Game</button>
+</div>
+<div class="menu">
+    <button onclick="changeUsername()">Change Username</button>
+    <a href="leaderboard.html">
+        <button>Leaderboard</button>
+    </a>
+</div>
+
+<br><br>
+
+<canvas id="singleplayerGameCanvas" width="1350" height="650">
+Your browser does not support the HTML canvas element.
+</canvas>
+
+</div>
+</body>
+
+<script>
 
 const canvas = document.getElementById('singleplayerGameCanvas');
 const ctx = canvas.getContext('2d');
 const highScoreDisplay = document.getElementById('highScore');
+const playerNameDisplay = document.getElementById('playerName');
+const startBtn = document.getElementById('startBtn');
 
-// NEW: Initialize highScore from localStorage so it saves after refresh
+/* ===========================
+   DREAMLO SETTINGS
+=========================== */
+const dreamloURL = "http://dreamlo.com/lb/_vy5nH8ju0SbZtbm3z1C1A-8HBIbA04U-56rKJX7Imow";
+
+/* ===========================
+   SAVED DATA
+=========================== */
+console.log("loading stuff")
 let highScore = localStorage.getItem('myHighScore') || 0;
+let username = localStorage.getItem('myUsername') || null;
 
-singleplayerGameArea.style.display = "block";
-
-function easteregg() { window.location.href = 'src/job.png'; }
-
+/* ===========================
+   GAME VARIABLES
+=========================== */
 let dots = [];
 let score = 0;
-let player = { 
-    x: 200, 
-    y: 200, 
-    width: 20, 
-    height: 20, 
-    radius: 10, 
-    speed: 6,
-    vx: 0,
-    vy: 0
+
+let player = {
+    x:200,
+    y:200,
+    width:20,
+    height:20,
+    radius:10,
+    speed:6,
+    vx:0,
+    vy:0
 };
-let username = null;
+
 let keys = {};
 let isSlowMode = false;
 let pause = false;
 let hard = false;
 let gameRunning = false;
 
-// NEW: Function to check and save Highscore
-function updateHighScore() {
-    if (score > highScore) {
+singleplayerGameArea.style.display = "block";
+
+/* ===========================
+   UI STARTUP
+=========================== */
+highScoreDisplay.innerHTML = "Highscore: " + highScore;
+showUsername();
+
+/* ===========================
+   FUNCTIONS
+=========================== */
+
+function easteregg(){
+    window.location.href = 'src/job.png';
+}
+
+function showUsername(){
+    if(username){
+        playerNameDisplay.innerHTML = "Player: " + username;
+    }else{
+        playerNameDisplay.innerHTML = "Player: Guest";
+    }
+}
+
+function getUsername(){
+    if(!username){
+
+        let input = prompt("Enter username for leaderboard:");
+
+        if(input){
+            input = input.replace(/[^a-z0-9_]/gi, "").slice(0,12);
+
+            if(input.length >= 3){
+                username = input;
+                localStorage.setItem("myUsername", username);
+            }
+        }
+    }
+
+    showUsername();
+    return username;
+}
+
+function changeUsername(){
+
+    let oldName = username;
+
+    if(oldName){
+        fetch(
+            dreamloURL + "/delete/" + encodeURIComponent(oldName),
+            { mode:"no-cors" }
+        );
+    }
+
+    localStorage.removeItem("myUsername");
+    username = null;
+
+    getUsername();
+}
+
+function submitScore(name, score){
+
+    fetch(
+        dreamloURL + "/add/" + encodeURIComponent(name) + "/" + score,
+        { mode:"no-cors" }
+    )
+    .then(() => console.log("score submitted"))
+    .catch(err => console.log("dreamlo error", err));
+}
+
+function updateHighScore(){
+    if(score > highScore){
         highScore = score;
-        localStorage.setItem('myHighScore', highScore); // Save to browser
+        localStorage.setItem('myHighScore', highScore);
         highScoreDisplay.innerHTML = "Highscore: " + highScore;
     }
 }
 
-const startBtn = document.getElementById('startBtn');
 startBtn.addEventListener('click', () => {
     gameRunning = true;
     startBtn.style.display = 'none';
     resetGame();
 });
 
-function toggleSlowMode() {
+function toggleSlowMode(){
     isSlowMode = !isSlowMode;
-    if (isSlowMode) {
+
+    if(isSlowMode){
         dots.forEach(d => d.speed = 1);
         player.speed = 1;
-    } else {
+    }else{
         dots.forEach(d => d.speed = 5);
         player.speed = 6;
     }
 }
 
-function togglePause() {
+function togglePause(){
     pause = !pause;
-    if (pause) {
+
+    if(pause){
         dots.forEach(d => d.speed = 0);
         player.speed = 0;
-    } else {
+    }else{
         dots.forEach(d => d.speed = 5);
         player.speed = 6;
     }
 }
 
-function hardMode() {
+function hardMode(){
     hard = !hard;
-    if (hard) {
+
+    if(hard){
         dots.forEach(d => d.speed = 5);
         player.speed = 6;
-    } else {
+    }else{
         dots.forEach(d => d.speed = 10);
         player.speed = 11;
     }
 }
 
-function insaneMode() {
+function insaneMode(){
     hard = !hard;
-    if (hard) {
+
+    if(hard){
         dots.forEach(d => d.speed = 5);
         player.speed = 6;
-    } else {
+    }else{
         dots.forEach(d => d.speed = 50);
         player.speed = 45;
     }
 }
 
-function spawnDot() {
-    if (!gameRunning) return;
-    score = score + 1;
+function spawnDot(){
+
+    if(!gameRunning) return;
+
+    score++;
+
     let x, y;
-    if (Math.random() < 0.5) {
+
+    if(Math.random() < 0.5){
         x = Math.random() < 0.5 ? 0 : canvas.width;
         y = Math.random() * canvas.height;
-    } else {
+    }else{
         x = Math.random() * canvas.width;
         y = Math.random() < 0.5 ? 0 : canvas.height;
     }
-    dots.push({ 
-        x: x, 
-        y: y, 
-        radius: 10, 
-        speed: isSlowMode ? 1 : 6,
-        vx: 0, 
-        vy: 0 
+
+    dots.push({
+        x:x,
+        y:y,
+        radius:10,
+        speed:isSlowMode ? 1 : 6,
+        vx:0,
+        vy:0
     });
 }
 
-function resetGame() {
+function resetGame(){
+
     score = 0;
+
     player.x = 200;
     player.y = 200;
     player.vx = 0;
     player.vy = 0;
+
     dots = [];
-    spawnDot();
     keys = {};
+
+    spawnDot();
 }
 
-async function fetchData(url) {
-    try {
-        await fetch(url, { mode: 'no-cors' });
-        console.log("Score submitted successfully!");
-    } catch (error) {
-        console.error("Leaderboard Error:", error);
-    }
-}
+function onPlayerTouched(){
 
-function onPlayerTouched() {
     gameRunning = false;
-    updateHighScore(); // UPDATED: Check for new record on death
+
+    updateHighScore();
+
+    let user = getUsername();
+
+    if(user && score >= highScore){
+        submitScore(user, highScore);
+    }
+
     startBtn.innerText = "Restart Game";
-    startBtn.style.display = 'block';
-    alert('You have been eaten - Score: ' + score);
+    startBtn.style.display = "block";
+    console.log("ded")
+
+    alert("You have been eaten - Score: " + score);
 }
 
-function resolveDotCollisions() {
-    const flingStrength = 20; 
-    for (let i = 0; i < dots.length; i++) {
-        for (let j = i + 1; j < dots.length; j++) {
+function resolveDotCollisions(){
+
+    const flingStrength = 20;
+
+    for(let i=0;i<dots.length;i++){
+
+        for(let j=i+1;j<dots.length;j++){
+
             let d1 = dots[i];
             let d2 = dots[j];
+
             const dx = d2.x - d1.x;
             const dy = d2.y - d1.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const distance = Math.sqrt(dx*dx + dy*dy);
             const minDistance = d1.radius + d2.radius;
-            if (distance < minDistance) {
+
+            if(distance < minDistance){
+
                 const angle = Math.atan2(dy, dx);
+
                 d1.vx -= Math.cos(angle) * flingStrength;
                 d1.vy -= Math.sin(angle) * flingStrength;
+
                 d2.vx += Math.cos(angle) * flingStrength;
                 d2.vy += Math.sin(angle) * flingStrength;
+
                 const overlap = minDistance - distance;
-                d1.x -= Math.cos(angle) * (overlap / 2);
-                d1.y -= Math.sin(angle) * (overlap / 2);
-                d2.x += Math.cos(angle) * (overlap / 2);
-                d2.y += Math.sin(angle) * (overlap / 2);
+
+                d1.x -= Math.cos(angle) * (overlap/2);
+                d1.y -= Math.sin(angle) * (overlap/2);
+
+                d2.x += Math.cos(angle) * (overlap/2);
+                d2.y += Math.sin(angle) * (overlap/2);
             }
         }
     }
 }
 
-function updateDots() {
+function updateDots(){
+
     dots.forEach(dot => {
+
         const dx = (player.x + player.width/2) - dot.x;
         const dy = (player.y + player.height/2) - dot.y;
+
         const angle = Math.atan2(dy, dx);
+
         dot.vx += Math.cos(angle) * (dot.speed * 0.05);
         dot.vy += Math.sin(angle) * (dot.speed * 0.05);
+
         dot.vx *= 0.98;
         dot.vy *= 0.98;
+
         dot.x += dot.vx;
         dot.y += dot.vy;
-        if (dot.x < 0 || dot.x > canvas.width) dot.vx *= -1.2;
-        if (dot.y < 0 || dot.y > canvas.height) dot.vy *= -1.2;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < (player.radius + dot.radius)) {
+
+        if(dot.x < 0 || dot.x > canvas.width) dot.vx *= -1.2;
+        if(dot.y < 0 || dot.y > canvas.height) dot.vy *= -1.2;
+
+        const distance = Math.sqrt(dx*dx + dy*dy);
+
+        if(distance < (player.radius + dot.radius)){
             onPlayerTouched();
         }
+
     });
+
     resolveDotCollisions();
 }
 
-document.addEventListener('keydown', (e) => keys[e.key] = true);
-document.addEventListener('keyup', (e) => keys[e.key] = false);
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
 
-function update() {
+function update(){
+
     const accel = 0.8;
-    if (keys['ArrowUp'] || keys['w']) player.vy -= accel;
-    if (keys['ArrowDown'] || keys['s']) player.vy += accel;
-    if (keys['ArrowLeft'] || keys['a']) player.vx -= accel;
-    if (keys['ArrowRight'] || keys['d']) player.vx += accel;
-    
-    if (keys['p']) togglePause();
-    if (keys[' ']) toggleSlowMode();
-    if (keys['h']) hardMode();
+
+    if(keys['ArrowUp'] || keys['w']) player.vy -= accel;
+    if(keys['ArrowDown'] || keys['s']) player.vy += accel;
+    if(keys['ArrowLeft'] || keys['a']) player.vx -= accel;
+    if(keys['ArrowRight'] || keys['d']) player.vx += accel;
 
     player.vx *= 0.95;
     player.vy *= 0.95;
+
     player.x += player.vx;
     player.y += player.vy;
 
-    if (player.x < 0) {
+    if(player.x < 0){
         player.x = 0;
-        player.vx *= -1.5; 
-    } else if (player.x > canvas.width - player.width) {
+        player.vx *= -1.5;
+    }
+
+    if(player.x > canvas.width - player.width){
         player.x = canvas.width - player.width;
         player.vx *= -1.5;
     }
 
-    if (player.y < 0) {
+    if(player.y < 0){
         player.y = 0;
         player.vy *= -1.5;
-    } else if (player.y > canvas.height - player.height) {
+    }
+
+    if(player.y > canvas.height - player.height){
         player.y = canvas.height - player.height;
         player.vy *= -1.5;
     }
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function draw(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
     ctx.fillStyle = '#45ff01';
     ctx.fillRect(player.x, player.y, player.width, player.height);
+
     ctx.fillStyle = '#ff0000';
+
     dots.forEach(dot => {
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
@@ -300,12 +439,15 @@ function draw() {
     });
 }
 
-function gameLoop() {
-    if (gameRunning && !pause) {
+function gameLoop(){
+
+    if(gameRunning && !pause){
         update();
         updateDots();
     }
+
     draw();
+
     requestAnimationFrame(gameLoop);
 }
 

@@ -1,0 +1,135 @@
+<head>
+<style>
+body{
+    background:#222;
+    color:white;
+    font-family:sans-serif;
+    text-align:center;
+}
+h1{
+    font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    cursor:pointer;
+}
+canvas{
+    background:#000;
+    border:2px solid #444;
+    display:block;
+    margin:10px auto;
+}
+.menu{
+    background:#333;
+    padding:15px;
+    border-radius:8px;
+    display:inline-block;
+    margin-top:10px;
+    margin-bottom:10px;
+}
+button{
+    padding:8px 15px;
+    cursor:pointer;
+    background:#45ff01;
+    border:none;
+    border-radius:4px;
+    font-weight:bold;
+    margin:2px;
+}
+button:hover{
+    background:#32ba00;
+}
+a{
+    text-decoration:none;
+}
+</style>
+</head>
+<h1>Leaderboard</h1>
+<div class="menu">
+    <a href="singleplayer.html">
+        <button>Back</button>
+    </a>
+</div>
+<div id="container"></div>
+
+<script>
+console.log("Leaderboard provided by dreamlo")
+const container = document.getElementById("container");
+
+// YOUR PRIVATE CODE (needed for delete)
+const privateURL = "http://dreamlo.com/lb/_vy5nH8ju0SbZtbm3z1C1A-8HBIbA04U-56rKJX7Imow";
+
+// Public leaderboard JSON
+fetch("http://dreamlo.com/lb/69f201858f40bb10689daa45/json")
+.then(res => res.json())
+.then(data => {
+
+    let entries = data.dreamlo.leaderboard.entry;
+
+    if(!Array.isArray(entries)) entries = [entries];
+
+    let html = `
+        <table border="1" style="margin:auto;color:white;">
+        <tr><th>Username</th><th>High Score</th></tr>
+    `;
+
+    entries.forEach(p => {
+
+        let name = p.name;
+        let score = parseInt(p.score);
+
+        // =========================
+        // 🔥 ANTI-CHEAT RULES
+        // =========================
+        console.log("readleaf.log:")
+        console.log("secured by readleaf anticheat")
+        console.log("initializing readleaf")
+
+        let isCheater = false;
+
+        // Rule 1: impossible score
+        console.log("checking for cheaters...")
+        if(score > 200){
+            isCheater = true;
+        }
+
+        // Rule 2: invalid name (spam / weird chars)
+        if(!/^[a-z0-9_]{1,12}$/i.test(name)){
+            isCheater = true;
+        }
+
+        // Rule 3: empty or broken data
+        if(!name || isNaN(score)){
+            isCheater = true;
+        }
+
+        // If cheater → delete from Dreamlo
+        if(isCheater){
+
+            fetch(
+                privateURL + "/delete/" + encodeURIComponent(name),
+                { mode:"no-cors" }
+            );
+
+            console.log("deleted cheater:", name, score);
+
+            return; // skip showing them
+        }
+
+        else {
+            console.log("no cheaters... yay!")
+        }
+        
+        console.log("readleaf.log end")
+
+        // otherwise show normally
+        html += `<tr><td>${name}</td><td>${score}</td></tr>`;
+    });
+
+    html += "</table>";
+
+    container.innerHTML = html;
+
+})
+.catch(err => {
+    container.innerHTML = "Failed to load leaderboard";
+    console.log(err);
+});
+</script>
