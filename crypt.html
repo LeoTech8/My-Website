@@ -94,6 +94,23 @@ button:hover{
     opacity:0.8;
     font-size:14px;
 }
+
+#output {
+    margin-top: 20px;
+    padding: 16px;
+    background: #0b1220;
+    border-radius: 14px;
+
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    /* 🔥 THIS FIXES THE “ABYSS” PROBLEM */
+    white-space: pre-wrap;     /* allows wrapping */
+    word-break: break-word;    /* breaks long base64 strings */
+    overflow-wrap: anywhere;   /* extra safety */
+
+    max-height: 200px;
+    overflow-y: auto;          /* scroll instead of expanding */
+}
 </style>
 </head>
 
