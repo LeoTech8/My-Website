@@ -112,9 +112,9 @@ id="password"
 placeholder="Password">
 
 <div class="buttons">
-<button class="encrypt">Encrypt</button>
-<button class="decrypt">Decrypt</button>
-<button class="copy">Copy</button>
+  <button class="encrypt" type="button">Encrypt</button>
+  <button class="decrypt" type="button">Decrypt</button>
+  <button class="copy" type="button">Copy</button>
 </div>
 
 <div id="status">
@@ -124,4 +124,125 @@ Everything stays on this device.
 </div>
 
 </body>
+<script>
+function toBase64(buffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function fromBase64(str) {
+    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+}
+
+async function deriveKey(password, salt) {
+    const enc = new TextEncoder();
+
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(password),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+    );
+
+    return crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt,
+            iterations: 250000,
+            hash: "SHA-256"
+        },
+        keyMaterial,
+        {
+            name: "AES-GCM",
+            length: 256
+        },
+        false,
+        ["encrypt", "decrypt"]
+    );
+}
+
+async function encrypt() {
+    const text = document.getElementById("text").value;
+    const password = document.getElementById("password").value;
+
+    if (!text || !password) {
+        document.getElementById("status").textContent = "Enter text + password";
+        return;
+    }
+
+    const enc = new TextEncoder();
+
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const key = await deriveKey(password, salt);
+
+    const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        enc.encode(text)
+    );
+
+    const combined = new Uint8Array([
+        ...salt,
+        ...iv,
+        ...new Uint8Array(encrypted)
+    ]);
+
+    const result = toBase64(combined);
+
+    document.getElementById("output").textContent = result;
+    document.getElementById("status").textContent = "Encrypted";
+}
+
+async function decrypt() {
+    try {
+        const input = document.getElementById("text").value;
+        const password = document.getElementById("password").value;
+
+        if (!input || !password) {
+            document.getElementById("status").textContent = "Enter encrypted text + password";
+            return;
+        }
+
+        const data = fromBase64(input);
+
+        const salt = data.slice(0, 16);
+        const iv = data.slice(16, 28);
+        const encrypted = data.slice(28);
+
+        const key = await deriveKey(password, salt);
+
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            key,
+            encrypted
+        );
+
+        document.getElementById("output").textContent =
+            new TextDecoder().decode(decrypted);
+
+        document.getElementById("status").textContent = "Decrypted";
+    } catch (e) {
+        document.getElementById("status").textContent = "Wrong password or corrupted data";
+    }
+}
+
+async function copyOutput() {
+    const text = document.getElementById("output").textContent;
+
+    try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("status").textContent = "Copied";
+    } catch (e) {
+        document.getElementById("status").textContent = "Copy failed (iOS restriction)";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    document.querySelector(".encrypt").addEventListener("click", encrypt);
+    document.querySelector(".decrypt").addEventListener("click", decrypt);
+    document.querySelector(".copy").addEventListener("click", copyOutput);
+});
+</script>
 </html>
