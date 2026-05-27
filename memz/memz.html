@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thumbnail Collection</title>
+
+  <!-- Connects Google Fonts to load the Montserrat bold font style -->
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Global Page Reset & Styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #383838; 
+    }
+
+    /* Centered Main Header Title */
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: 3rem;
+      letter-spacing: -1px;
+      color: #ffffff; 
+      text-align: center;
+      margin-top: 40px;
+      margin-bottom: 20px; 
+    }
+
+    /* Grid Framework to automatically fill the entire screen width */
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      list-style: none;
+      padding: 20px; /* Outer edge padding around the whole grid */
+      margin: 0;
+    }
+
+    /* Styling for the thumbnail photos in the grid list */
+    ul img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    /* Only applies the 10px glide animation strictly inside the list grid */
+    ul img:hover {
+      transform: translateY(-10px); 
+    }
+
+    /* Full-Screen Lightbox Backdrop Overlay */
+    .lightbox {
+      display: none; /* Hidden by default; turned to 'flex' by JS */
+      position: fixed;
+      z-index: 1000; 
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9); 
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Structural wrapper to cleanly stack the title caption over the image */
+    .lightbox-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 85%;
+      max-height: 85%;
+    }
+
+    /* The dynamically loaded filename header text on top of the lightbox */
+    .lightbox-caption {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: 1.8rem;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-bottom: 15px; 
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Enforces that the main enlarged photo stays perfectly still without hover effects */
+    .lightbox-content {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      object-fit: contain;
+      transform: none !important; 
+    }
+
+    /* Corner X Close Button Styling */
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 35px;
+      color: #ffffff;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .close-btn:hover {
+      color: #ff3333; 
+    }
+    /* Styling for the credit text paragraph */
+.credits-text {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: #b3b3b3; /* Soft light gray so it doesn't distract from headings */
+  text-align: center;
+  margin-top: -10px; /* Pulls it closer up to your H1 title */
+  margin-bottom: 30px;
+}
+
+/* Flexbox wrapper to align buttons cleanly side-by-side */
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Perfect spacing between the buttons */
+  margin-bottom: 20px; /* Space between buttons and your thumbnail grid */
+}
+
+/* Base button template styles */
+.btn {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+/* Primary Accent Button (Make Thumbnail) */
+.btn-primary {
+  background-color: #00f0ff; /* Vibrant electric cyan */
+  color: #1a1a1a; /* Dark text for great legibility */
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
+}
+
+.btn-primary:hover {
+  background-color: #00d8e6;
+  transform: translateY(-2px); /* Subtle crisp hover jump */
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+}
+
+/* Secondary Neutral Button (Back) */
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.1); /* Translucent sleek glass effect */
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Click activation effect for both buttons */
+.btn:active {
+  transform: translateY(0);
+}
+
+  </style>
+</head>
+<body>
+
+  <h1>Thumbnail Collection</h1>
+<p class="credits-text">All thumbnails made by me and my friends (not AI)</p>
+
+<div class="button-container">
+  <a href="../other_stuff.html">
+  <button class="btn btn-secondary">Back</button>
+  </a>
+  <a href="https://jackisanerd.github.io/jack.fun/thumbnailmaker.html">
+  <button class="btn btn-primary">Make Thumbnail</button>
+</a>
+</div>
+
+  <!-- The Thumbnail Grid -->
+  <ul>
+    <li><img src="67.png" alt="67 Grid Image"></li>
+    <li><img src="artemis.png" alt="Artemis Image"></li>
+    <li><img src="asteroid.png" alt="Asteroid Image"></li>
+    <li><img src="bathroom.png" alt="Bathroom Image"></li>
+    <li><img src="beans.png" alt="Beans Image"></li>
+    <li><img src="bonnie.png" alt="Bonnie Image"></li>
+    <li><img src="cabinet.png" alt="Cabinet Image"></li>
+    <li><img src="cat_nuke.png" alt="Cat Nuke Image"></li>  
+    <li><img src="cave.png" alt="Cave Image"></li>
+    <li><img src="chernobyl.png" alt="Chernobyl Image"></li>
+    <li><img src="chicken.png" alt="Chicken Image"></li>
+    <li><img src="children.png" alt="Children Image"></li>
+    <li><img src="clarkson.png" alt="Clarkson Image"></li>
+    <li><img src="communism.png" alt="Communism Image"></li>
+    <li><img src="creation.png" alt="Creation Image"></li>
+    <li><img src="dead.png" alt="Dead Image"></li>  
+    <li><img src="democracy.png" alt="Democracy Image"></li>
+    <li><img src="dino.png" alt="Dino Image"></li>
+    <li><img src="dog.png" alt="Dog Image"></li>
+    <li><img src="duck_tape.png" alt="Duck Tape Image"></li>
+    <li><img src="e's.png" alt="E's Image"></li>
+    <li><img src="eishenhower.png" alt="Eisenhower Image"></li>  
+    <li><img src="elevator.png" alt="Elevator Image"></li>
+    <li><img src="fairy_story.png" alt="Fairy Story Image"></li>
+    <li><img src="fart.png" alt="Fart Image"></li>
+    <li><img src="files.png" alt="Files Image"></li>
+    <li><img src="gambling.png" alt="Gambling Image"></li>
+    <li><img src="goat_kart.png" alt="Goat Kart Image"></li>
+    <li><img src="jack_family.png" alt="Jack Family Image"></li>  
+    <li><img src="jack.png" alt="Jack Image"></li>
+    <li><img src="jackle.png" alt="Jackle Image"></li>
+    <li><img src="jackson.png" alt="Jackson Image"></li>
+    <li><img src="japanese.png" alt="Japanese Image"></li>
+    <li><img src="jeb_boom.png" alt="Jeb Boom Image"></li>
+    <li><img src="jeb2.png" alt="Jeb2 Image"></li>  
+    <li><img src="jeremy_clark.png" alt="Jeremy Clarkson Image"></li>
+    <li><img src="job_boss.png" alt="Job Boss Image"></li>
+    <li><img src="kerbol.png" alt="Kerbol Image"></li>
+    <li><img src="lance_stroll.png" alt="Lance Stroll Image"></li>  
+    <li><img src="laptop_in_class.png" alt="Laptop in Class Image"></li>
+    <li><img src="lebron.png" alt="Lebron Image"></li>
+    <li><img src="lever.png" alt="Lever Image"></li>
+    <li><img src="lorax.png" alt="Lorax Image"></li>
+    <li><img src="mario.png" alt="Mario Image"></li>
+    <li><img src="math.png" alt="Math Image"></li>  
+    <li><img src="modern_interpretations.png" alt="Modern Interpretations Image"></li>
+    <li><img src="money.png" alt="Money Image"></li>
+    <li><img src="moron.png" alt="Moron Image"></li>
+    <li><img src="motherland.png" alt="Motherland Image"></li>
+    <li><img src="no_money.png" alt="No Money Image"></li>
+    <li><img src="nuke2.png" alt="Nuke 2 Image"></li>
+    <li><img src="obama.png" alt="Obama Image"></li>  
+    <li><img src="oil_drill.png" alt="Oil Drill Image"></li>
+    <li><img src="oil_nuke.png" alt="Oil Nuke Image"></li>
+    <li><img src="oil.png" alt="Oil Image"></li>
+    <li><img src="orange.png" alt="Orange Image"></li>
+    <li><img src="paperclip.png" alt="Paperclip Image"></li>
+  </ul>
+
+  <!-- FIXED: The single lightbox container is now safely placed OUTSIDE of the <ul> grid -->
+  <div id="imageLightbox" class="lightbox">
+    <span class="close-btn">&times;</span>
+    <div class="lightbox-wrapper">
+      <div id="lightboxCaption" class="lightbox-caption"></div>
+      <img class="lightbox-content" id="lightboxImg" alt="Enlarged view">
+    </div>
+  </div>
+
+  <!-- JavaScript Functionality -->
+  <script>
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const lightboxCaption = document.getElementById('lightboxCaption');
+    const closeBtn = document.querySelector('.close-btn');
+
+    // Automatically hooks open functions up to all image grid elements
+    document.querySelectorAll('ul img').forEach(image => {
+      image.addEventListener('click', () => {
+        lightbox.style.display = 'flex';
+        lightboxImg.src = image.src;
+        
+        // Breaks up the path to isolate the filename (e.g., "cat_nuke.png")
+        const filename = image.src.split('/').pop();
+        lightboxCaption.textContent = filename;
+      });
+    });
+
+    // Close button click handler
+    closeBtn.addEventListener('click', () => {
+      lightbox.style.display = 'none';
+    });
+
+    // Outer backdrop backdrop click handler 
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) {
+        lightbox.style.display = 'none';
+      }
+    });
+  </script>
+
+</body>
+</html>
