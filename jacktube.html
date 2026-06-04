@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Homepage Clone</title>
+    <style>
+        /* 1. Global Reset & Variables */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Roboto, Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #030303;
+            overflow: hidden;
+        }
+
+        /* 2. Header / Navbar Layout */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background-color: #ffffff;
+            padding: 0 16px;
+            z-index: 100;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-icon, .nav-right .icon-btn {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+        }
+
+        .menu-icon:hover, .nav-right .icon-btn:hover {
+            background-color: #e5e5e5;
+        }
+
+        .logo-placeholder {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0000;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Search Bar Grouping */
+        .nav-center {
+            display: flex;
+            flex: 0 1 600px;
+            align-items: center;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 8px 16px;
+            border: 1px solid #cccccc;
+            border-radius: 40px 0 0 40px;
+            font-size: 16px;
+            outline: none;
+            height: 40px;
+        }
+
+        .search-bar:focus {
+            border-color: #065fd4;
+        }
+
+        .search-btn {
+            padding: 0 24px;
+            background-color: #f8f8f8;
+            border: 1px solid #cccccc;
+            border-left: none;
+            border-radius: 0 40px 40px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            font-size: 16px;
+        }
+
+        .search-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .profile-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #5c2525;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        /* 3. Main Layout Wrapper */
+        .main-container {
+            display: flex;
+            margin-top: 56px;
+            height: calc(100vh - 56px);
+        }
+
+        /* Left Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #ffffff;
+            padding-top: 12px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 0 24px;
+            height: 40px;
+            text-decoration: none;
+            color: #030303;
+            font-size: 14px;
+        }
+
+        .sidebar-link:hover {
+            background-color: #f2f2f2;
+        }
+
+        .sidebar-link .icon {
+            font-size: 20px;
+            width: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 4. Content Area & Video Grid */
+        .content-container {
+            flex-grow: 1;
+            background-color: #f9f9f9;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 40px 16px;
+        }
+
+        /* 5. Video Cards */
+        .video-card {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .thumbnail-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .video-time {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 3px 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        .video-info {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .channel-pfp {
+            width: 36px;
+            height: 36px;
+            background-color: #0073e6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .video-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-title {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            color: #0f0f0f;
+            margin-bottom: 4px;
+        }
+
+        .video-author, .video-stats {
+            font-size: 12px;
+            color: #606060;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Header & Navigation Bar -->
+    <header class="header">
+        <div class="nav-left">
+            <button class="menu-icon" id="menuToggle">☰</button>
+            <div class="logo-placeholder"><span>▶</span>JackTube (BETA)</div>
+        </div>
+        
+        <div class="nav-center">
+            <input type="text" placeholder="Search" class="search-bar">
+            <button class="search-btn">🔍</button>
+        </div>
+
+        <div class="nav-right">
+            <button class="icon-btn">📹</button>
+            <button class="icon-btn">⣿</button>
+            <button class="icon-btn">🔔</button>
+            <div class="profile-icon">U</div>
+        </div>
+    </header>
+
+    <!-- 2. Main Layout Container -->
+    <main class="main-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <a href="https://leo-johnson.com" class="sidebar-link"><span class="icon">🏠</span>Home (Back)</a>
+            <a href="#" class="sidebar-link"><span class="icon">📺</span>Subscriptions</a>
+            <a href="#" class="sidebar-link"><span class="icon">📁</span>Library</a>
+            <a href="#" class="sidebar-link"><span class="icon">⏳</span>History</a>
+            <a href="#" class="sidebar-link"><span class="icon">🎬</span>Your Videos</a>
+            <a href="#" class="sidebar-link"><span class="icon">🕒</span>Watch Later</a>
+        </aside>
+
+        <!-- Video Content Area Wrapper -->
+        <div class="content-container">
+            <!-- This target element automatically builds your 10 video item elements -->
+            <div class="video-grid" id="videoGrid"></div>
+        </div> 
+    </main>
+
+    <!-- 6. JavaScript Automation Engine -->
+    <script>
+        // Array catalog containing all 10 of your customized video elements
+        const videoData = [
+            {
+                img: "https://leo-johnson.com/memz/job_boss.png",
+                time: "12:30",
+                pfp: "I",
+                title: "Inspirational Quotes",
+                author: "Be Inspired",
+                stats: "105M views • 2 days ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/bird.png",
+                time: "14:15",
+                pfp: "W",
+                title: "The Worlds Weirdest Animals!",
+                author: "Weird Stuff",
+                stats: "420K views • 1 week ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/tung2.png",
+                time: "18:42",
+                pfp: "H",
+                title: "Watching Brainrot So You Dont Have To!",
+                author: "help me",
+                stats: "1.4M views • 3 days ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/gambling.png",
+                time: "22:05",
+                pfp: "T",
+                title: "Play To Win!",
+                author: "Trust me bro",
+                stats: "89K views • 12 hours ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/laptop_in_class.png",
+                time: "04:15",
+                pfp: "M",
+                title: "Laptop in class POV",
+                author: "Memz Daily",
+                stats: "2.1M views • 2 weeks ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/modern_interpretations.png",
+                time: "31:10",
+                pfp: "W",
+                title: "Modern Interpretations",
+                author: "CoolBoy67",
+                stats: "12K views • 5 months ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/max_verstappen.png",
+                time: "3663667:32",
+                pfp: "W",
+                title: "A deep dive into Max Verstappen",
+                author: "xXmax_fanXx",
+                stats: "2 views • 1 week ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/trump.png",
+                time: "3:42",
+                pfp: "Y",
+                title: "The dumbest man alive...",
+                author: "youtoo?",
+                stats: "56k views • 3 weeks ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/peel_p_50.png",
+                time: "31:54",
+                pfp: "C",
+                title: "The worlds best car?",
+                author: "CarsAreCool?",
+                stats: "135k views • 4 months ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/oil_nuke.png",
+                time: "4:14",
+                pfp: "O",
+                title: "Oil = Nuke????",
+                author: "OIL?",
+                stats: "150 views • 1 month ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/redbull.png",
+                time: "53:14",
+                pfp: "X",
+                title: "The TRUE redbull experience",
+                author: "xXREDBULLXx420",
+                stats: "150 views • 7 months ago"
+            },
+            {
+                img: "https://leo-johnson.com/memz/motherland.png",
+                time: "0:59",
+                pfp: "O",
+                title: "OBEY THE MOTHERLAND",
+                author: "OBEY",
+                stats: "4b views • 1 day ago"
+            },
+            
+            
+        ]
+
+        // Renders the cards dynamically into the HTML grid
+        const gridContainer = document.getElementById('videoGrid');
+        
+        videoData.forEach(video => {
+            const cardHTML = `
+                <div class="video-card">
+                    <div class="thumbnail-container">
+                        <img class="thumbnail" src="${video.img}" alt="${video.title}">
+                        <div class="video-time">${video.time}</div>
+                    </div>
+                    <div class="video-info">
+                        <div class="channel-pfp">${video.pfp}</div>
+                        <div class="video-details">
+                            <p class="video-title">${video.title}</p>
+                            <p class="video-author">${video.author}</p>
+                            <p class="video-stats">${video.stats}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gridContainer.innerHTML += cardHTML;
+        });
+
+        // Makes the hamburger button collapse the left menu smoothly
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            if (sidebar.style.width === '0px' || sidebar.style.display === 'none') {
+                sidebar.style.width = '240px';
+                sidebar.style.display = 'block';
+            } else {
+                sidebar.style.width = '0px';
+                sidebar.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
